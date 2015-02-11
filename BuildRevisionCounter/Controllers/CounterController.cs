@@ -28,7 +28,7 @@ namespace BuildRevisionCounter.Controllers
 			if (revision == null)
 				throw new HttpResponseException(HttpStatusCode.NotFound);
 
-			return revision.NextNumber - 1;
+			return revision.NextNumber;
 		}
 
 		[HttpPost]
@@ -48,7 +48,7 @@ namespace BuildRevisionCounter.Controllers
 
 			var revision = result.GetModifiedDocumentAs<RevisionModel>();
 
-			return revision.NextNumber - 1;
+			return revision.NextNumber;
 		}
 	}
 }
