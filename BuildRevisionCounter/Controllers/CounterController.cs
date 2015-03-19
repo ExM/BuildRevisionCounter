@@ -48,7 +48,7 @@ namespace BuildRevisionCounter.Controllers
 
 			var revision = result.GetModifiedDocumentAs<RevisionModel>();
 
-			return revision.NextNumber;
+			return revision.NextNumber - 1;
 		}
 	}
 }
