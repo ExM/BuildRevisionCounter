@@ -6,9 +6,12 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
+using BuildRevisionCounter.Security;
+
 namespace BuildRevisionCounter.Controllers
 {
 	[RoutePrefix("api/counter")]
+	[BasicAuthentication(Realm = "BuildRevisionCounter")]
 	public class CounterController : ApiController
 	{
 		private static MongoDBStorage _storage;
@@ -20,6 +23,7 @@ namespace BuildRevisionCounter.Controllers
 
 		[HttpGet]
 		[Route("{revisionName}")]
+		[Authorize(Roles = "admin, editor, anonymous")]
 		public long Current([FromUri] string revisionName)
 		{
 			var q = Query<RevisionModel>.Where(_ => _.Id == revisionName);
@@ -33,6 +37,7 @@ namespace BuildRevisionCounter.Controllers
 
 		[HttpPost]
 		[Route("{revisionName:regex([A-Za-z0-9._%+-]*)}")]
+		[Authorize(Roles = "buildserver")]
 		public long Bumping([FromUri] string revisionName)
 		{
 			var result = _storage.Revisions.FindAndModify(new FindAndModifyArgs()
