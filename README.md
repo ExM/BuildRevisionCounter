@@ -8,12 +8,12 @@
 * admin
 * buildserver
 * editor
-* anonymous
+* anonymous - не предоставившие логин и пароль
 
-## GET api/counter (editor, anonymous)
+## GET api/counter (admin, editor, anonymous)
 возвращает список всех счетчиков с текущими состояними, временем создания и временем последнего изменения.
 
-## GET api/counter/solution_4.12 (editor, anonymous)
+## GET api/counter/solution_4.12 (admin, editor, anonymous)
 возвращает текущее значение счетчика "solution_4.12", если счетчик отсутствует, то возвращать код 404
 
 ## POST api/counter/solution_4.12 (buildserver)
@@ -23,7 +23,7 @@
 # WebUI
 Одностраничное приложение на KnockoutJS
 
-## Отображение списка всех счетчиков с сортировкой по времени обновления (editor, anonymous)
+## Отображение списка всех счетчиков с сортировкой по времени обновления (admin, editor, anonymous)
 
 ## Редактирование счетчиков (изменение текущего номера) (editor)
 
