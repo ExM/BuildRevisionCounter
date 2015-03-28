@@ -45,31 +45,19 @@ namespace BuildRevisionCounter.Security
 				return Task.FromResult(0);
 			}
 
-			if (String.IsNullOrEmpty(authorization.Parameter))
-			{
-				// заголовок есть, но логина и пароля нет
-				context.ErrorResult = new AuthenticationFailureResult("Missing credentials", request);
-				return Task.FromResult(0);
-			}
+			string user;
+			string password;
 
-			var userNameAndPasword = ExtractUserNameAndPassword(authorization.Parameter);
-
-			if (userNameAndPasword == null)
+			if (!ExtractUserNameAndPassword(authorization.Parameter, out user, out password))
 			{
 				context.ErrorResult = new AuthenticationFailureResult("Invalid credentials", request);
 				return Task.FromResult(0);
 			}
 
-			var principal = Authenticate(userNameAndPasword.Item1, userNameAndPasword.Item2);
+			context.Principal = Authenticate(user, password);
 
-			if (principal == null)
-			{
+			if (context.Principal == null)
 				context.ErrorResult = new AuthenticationFailureResult("Invalid username or password", request);
-			}
-			else
-			{
-				context.Principal = principal;
-			}
 
 			return Task.FromResult(0);
 		}
@@ -85,8 +73,14 @@ namespace BuildRevisionCounter.Security
 			return principal;
 		}
 
-		private static Tuple<string, string> ExtractUserNameAndPassword(string authorizationParameter)
+		private static bool ExtractUserNameAndPassword(string authorizationParameter, out string user, out string password)
 		{
+			user = null;
+			password = null;
+
+			if (string.IsNullOrWhiteSpace(authorizationParameter))
+				return false;
+
 			byte[] credentialBytes;
 
 			try
@@ -95,7 +89,7 @@ namespace BuildRevisionCounter.Security
 			}
 			catch (FormatException)
 			{
-				return null;
+				return false;
 			}
 
 			string decodedCredentials;
@@ -106,47 +100,27 @@ namespace BuildRevisionCounter.Security
 			}
 			catch (DecoderFallbackException)
 			{
-				return null;
+				return false;
 			}
 
 			if (String.IsNullOrEmpty(decodedCredentials))
-			{
-				return null;
-			}
+				return false;
 
 			var colonIndex = decodedCredentials.IndexOf(':');
 
 			if (colonIndex == -1)
-			{
-				return null;
-			}
+				return false;
 
-			var userName = decodedCredentials.Substring(0, colonIndex);
-			var password = decodedCredentials.Substring(colonIndex + 1);
-			return new Tuple<string, string>(userName, password);
+			user = decodedCredentials.Substring(0, colonIndex);
+			password = decodedCredentials.Substring(colonIndex + 1);
+			return true;
 		}
 
 		public Task ChallengeAsync(HttpAuthenticationChallengeContext context, CancellationToken cancellationToken)
 		{
-			Challenge(context);
+			var authHeader = new AuthenticationHeaderValue(AuthorizationScheme, "realm=\"" + (Realm ?? "default") + "\""); // TODO: экранировать кавычки
+			context.Result = new AddChallengeOnUnauthorizedResult(authHeader, context.Result);
 			return Task.FromResult(0);
-		}
-
-		private void Challenge(HttpAuthenticationChallengeContext context)
-		{
-			string parameter;
-
-			if (String.IsNullOrEmpty(Realm))
-			{
-				parameter = null;
-			}
-			else
-			{
-				// TODO: экранировать ковычки
-				parameter = "realm=\"" + Realm + "\"";
-			}
-
-			context.Result = new AddChallengeOnUnauthorizedResult(new AuthenticationHeaderValue(AuthorizationScheme, parameter), context.Result);
 		}
 	}
 }

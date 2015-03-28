@@ -11,7 +11,7 @@ using BuildRevisionCounter.Security;
 namespace BuildRevisionCounter.Controllers
 {
 	[RoutePrefix("api/counter")]
-	[BasicAuthentication(Realm = "BuildRevisionCounter")]
+	[BasicAuthentication()]
 	public class CounterController : ApiController
 	{
 		private static MongoDBStorage _storage;
@@ -36,7 +36,7 @@ namespace BuildRevisionCounter.Controllers
 		}
 
 		[HttpPost]
-		[Route("{revisionName:regex([A-Za-z0-9._%+-]*)}")]
+		[Route("{revisionName}")]
 		[Authorize(Roles = "buildserver")]
 		public long Bumping([FromUri] string revisionName)
 		{
