@@ -1,43 +1,53 @@
-﻿using BuildRevisionCounter.Model;
+﻿using System.Configuration;
+using BuildRevisionCounter.Model;
 using MongoDB.Driver;
-using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Web;
-using MongoDB.Driver.Builders;
-using MongoDB.Driver.Linq;
-using MongoDB.Driver.Wrappers;
 
 namespace BuildRevisionCounter
 {
-	public class MongoDBStorage
-	{
-		public readonly MongoCollection<RevisionModel> Revisions;
-		public readonly MongoCollection<UserModel> Users;
+    public class MongoDBStorage
+    {
+        public static readonly string AdminName = "admin";
+        public readonly IMongoCollection<RevisionModel> Revisions;
+        public readonly IMongoCollection<UserModel> Users;
 
-		public MongoDBStorage()
-		{
-			string connectionString = ConfigurationManager.ConnectionStrings["MongoDBStorage"].ConnectionString;
-			var database = MongoDatabase.Create(connectionString);
+        public MongoDBStorage(string connectionString = null)
+            : this(GetDatabase(connectionString))
+        {
+        }
 
-			Revisions = database.GetCollection<RevisionModel>("revisions");
-			Users = database.GetCollection<UserModel>("users");
+        public MongoDBStorage(IMongoDatabase database)
+        {
+            Revisions = database.GetCollection<RevisionModel>("revisions");
+            Users = database.GetCollection<UserModel>("users");
 
-			CreateAdmin();
-		}
+            CreateAdmin();
+        }
 
-		private void CreateAdmin()
-		{
-			if (!Users.AsQueryable().Any())
-			{
-				Users.Insert(new UserModel
-				{
-					Name = "admin",
-					Password = "admin",
-					Roles = new[] {"admin", "buildserver", "editor"}
-				});
-			}
-		}
-	}
+        private static IMongoDatabase GetDatabase(string connectionString)
+        {
+            //TODO: Убрать это отсюда, это не ответственность класса
+            connectionString = connectionString
+                               ?? ConfigurationManager.ConnectionStrings["MongoDBStorage"].ConnectionString;
+
+            var mongoUrl = MongoUrl.Create(connectionString);
+            var database = new MongoClient(mongoUrl).GetDatabase(mongoUrl.DatabaseName);
+            return database;
+        }
+
+        private void CreateAdmin()
+        {
+            if (Users.Find(u => u.Name == AdminName).CountAsync().Result == 0)
+            {
+                Users
+                    .InsertOneAsync(
+                        new UserModel
+                        {
+                            Name = AdminName,
+                            Password = AdminName,
+                            Roles = new[] {AdminName, "buildserver", "editor"}
+                        })
+                    .Wait();
+            }
+        }
+    }
 }
