@@ -1,33 +1,36 @@
-﻿using BuildRevisionCounter.Model;
-using MongoDB.Driver;
-using MongoDB.Driver.Builders;
-using System;
+﻿using System;
 using System.Net;
 using System.Threading.Tasks;
-using System.Web;
 using System.Web.Http;
+using BuildRevisionCounter.Model;
 using BuildRevisionCounter.Security;
+using MongoDB.Driver;
 
 namespace BuildRevisionCounter.Controllers
 {
 	[RoutePrefix("api/counter")]
-	[BasicAuthentication()]
+	[BasicAuthentication]
 	public class CounterController : ApiController
 	{
-		private static MongoDBStorage _storage;
+		private readonly MongoDBStorage _storage;
 
-		static CounterController()
+		public CounterController() : this(MongoDBStorageFactory.DefaultInstance)
 		{
-			_storage = new MongoDBStorage();
+		}
+
+		public CounterController(MongoDBStorage mongoDbStorage)
+		{
+			_storage = mongoDbStorage;
 		}
 
 		[HttpGet]
 		[Route("{revisionName}")]
 		[Authorize(Roles = "admin, editor, anonymous")]
-		public long Current([FromUri] string revisionName)
+		public async Task<long> Current([FromUri] string revisionName)
 		{
-			var q = Query<RevisionModel>.Where(_ => _.Id == revisionName);
-			var revision = _storage.Revisions.FindOne(q);
+			var revision = await _storage.Revisions
+				.Find(r => r.Id == revisionName)
+				.SingleOrDefaultAsync();
 
 			if (revision == null)
 				throw new HttpResponseException(HttpStatusCode.NotFound);
@@ -38,22 +41,23 @@ namespace BuildRevisionCounter.Controllers
 		[HttpPost]
 		[Route("{revisionName}")]
 		[Authorize(Roles = "buildserver")]
-		public long Bumping([FromUri] string revisionName)
+		public async Task<long> Bumping([FromUri] string revisionName)
 		{
-			var result = _storage.Revisions.FindAndModify(new FindAndModifyArgs()
-			{
-				Query = Query<RevisionModel>.Where(_ => _.Id == revisionName),
-				Upsert = true,
-				Update = Update<RevisionModel>
-					.SetOnInsert(_ => _.Created, DateTime.UtcNow)
-					.Inc(_ => _.NextNumber, 1)
-					.Set(_ => _.Updated, DateTime.UtcNow),
-				VersionReturned = FindAndModifyDocumentVersion.Modified
-			});
+			var result = await _storage.Revisions
+				.FindOneAndUpdateAsync<RevisionModel>(
+					r => r.Id == revisionName,
+					Builders<RevisionModel>.Update
+						.Inc(r => r.NextNumber, 1)
+						.SetOnInsert(r => r.Created, DateTime.UtcNow)
+						.Set(r => r.Updated, DateTime.UtcNow),
+					new FindOneAndUpdateOptions<RevisionModel>
+					{
+						IsUpsert = true,
+						ReturnDocument = ReturnDocument.After
+					});
 
-			var revision = result.GetModifiedDocumentAs<RevisionModel>();
 
-			return revision.NextNumber;
+			return result.NextNumber;
 		}
 	}
 }

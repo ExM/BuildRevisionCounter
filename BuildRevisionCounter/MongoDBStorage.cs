@@ -1,26 +1,16 @@
 ﻿using BuildRevisionCounter.Model;
 using MongoDB.Driver;
-using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Web;
-using MongoDB.Driver.Builders;
-using MongoDB.Driver.Linq;
-using MongoDB.Driver.Wrappers;
 
 namespace BuildRevisionCounter
 {
 	public class MongoDBStorage
 	{
-		public readonly MongoCollection<RevisionModel> Revisions;
-		public readonly MongoCollection<UserModel> Users;
+		public static readonly string AdminName = "admin";
+		public readonly IMongoCollection<RevisionModel> Revisions;
+		public readonly IMongoCollection<UserModel> Users;
 
-		public MongoDBStorage()
+		public MongoDBStorage(IMongoDatabase database)
 		{
-			string connectionString = ConfigurationManager.ConnectionStrings["MongoDBStorage"].ConnectionString;
-			var database = MongoDatabase.Create(connectionString);
-
 			Revisions = database.GetCollection<RevisionModel>("revisions");
 			Users = database.GetCollection<UserModel>("users");
 
@@ -29,14 +19,17 @@ namespace BuildRevisionCounter
 
 		private void CreateAdmin()
 		{
-			if (!Users.AsQueryable().Any())
+			if (Users.Find(u => u.Name == AdminName).CountAsync().Result == 0)
 			{
-				Users.Insert(new UserModel
-				{
-					Name = "admin",
-					Password = "admin",
-					Roles = new[] {"admin", "buildserver", "editor"}
-				});
+				Users
+					.InsertOneAsync(
+						new UserModel
+						{
+							Name = AdminName,
+							Password = AdminName,
+							Roles = new[] {AdminName, "buildserver", "editor"}
+						})
+					.Wait();
 			}
 		}
 	}
