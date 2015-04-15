@@ -7,120 +7,135 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http.Filters;
 using BuildRevisionCounter.Model;
-using MongoDB.Driver.Builders;
+using MongoDB.Driver;
 
 namespace BuildRevisionCounter.Security
 {
-	public class BasicAuthenticationAttribute : Attribute, IAuthenticationFilter
-	{
-		private const string AuthorizationScheme = "Basic";
+    public class BasicAuthenticationAttribute : Attribute, IAuthenticationFilter
+    {
+        private const string AuthorizationScheme = "Basic";
 
-		private static readonly IPrincipal _anonymousPrincipal = new GenericPrincipal(new GenericIdentity("anonymous"), new[] { "anonymous" });
+        private static readonly IPrincipal _anonymousPrincipal = new GenericPrincipal(
+            new GenericIdentity("anonymous"),
+            new[] {"anonymous"});
 
-		// The currently approved HTTP 1.1 specification says characters here are ISO-8859-1.
-		// However, the current draft updated specification for HTTP 1.1 indicates this encoding is infrequently
-		// used in practice and defines behavior only for ASCII.
-		private static readonly Encoding _asciiEncodingWithExceptionFallback =
-			Encoding.GetEncoding(Encoding.ASCII.CodePage, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
+        // The currently approved HTTP 1.1 specification says characters here are ISO-8859-1.
+        // However, the current draft updated specification for HTTP 1.1 indicates this encoding is infrequently
+        // used in practice and defines behavior only for ASCII.
+        private static readonly Encoding _asciiEncodingWithExceptionFallback =
+            Encoding.GetEncoding(
+                Encoding.ASCII.CodePage,
+                EncoderFallback.ExceptionFallback,
+                DecoderFallback.ExceptionFallback);
 
-		private static readonly MongoDBStorage _storage;
+        private static readonly MongoDBStorage _storage;
 
-		static BasicAuthenticationAttribute()
-		{
-			_storage = new MongoDBStorage();
-		}
+        static BasicAuthenticationAttribute()
+        {
+            _storage = new MongoDBStorage();
+        }
 
-		public bool AllowMultiple { get { return false; } }
+        public string Realm { get; set; }
 
-		public string Realm { get; set; }
+        #region IAuthenticationFilter Members
 
-		public Task AuthenticateAsync(HttpAuthenticationContext context, CancellationToken cancellationToken)
-		{
-			HttpRequestMessage request = context.Request;
-			AuthenticationHeaderValue authorization = request.Headers.Authorization;
+        public bool AllowMultiple { get { return false; } }
 
-			if (authorization == null || authorization.Scheme != AuthorizationScheme)
-			{
-				context.Principal = _anonymousPrincipal;
-				return Task.FromResult(0);
-			}
+        public async Task AuthenticateAsync(HttpAuthenticationContext context, CancellationToken cancellationToken)
+        {
+            HttpRequestMessage request = context.Request;
+            AuthenticationHeaderValue authorization = request.Headers.Authorization;
 
-			string user;
-			string password;
+            if (authorization == null || authorization.Scheme != AuthorizationScheme)
+            {
+                context.Principal = _anonymousPrincipal;
+                return;
+            }
 
-			if (!ExtractUserNameAndPassword(authorization.Parameter, out user, out password))
-			{
-				context.ErrorResult = new AuthenticationFailureResult("Invalid credentials", request);
-				return Task.FromResult(0);
-			}
+            string user;
+            string password;
 
-			context.Principal = Authenticate(user, password);
+            if (!ExtractUserNameAndPassword(authorization.Parameter, out user, out password))
+            {
+                context.ErrorResult = new AuthenticationFailureResult("Invalid credentials", request);
+                return;
+            }
 
-			if (context.Principal == null)
-				context.ErrorResult = new AuthenticationFailureResult("Invalid username or password", request);
+            context.Principal = await Authenticate(user, password);
 
-			return Task.FromResult(0);
-		}
+            if (context.Principal == null)
+                context.ErrorResult = new AuthenticationFailureResult("Invalid username or password", request);
+        }
 
-		private IPrincipal Authenticate(string userName, string password)
-		{
-			IPrincipal principal = null;
-			var user = _storage.Users.FindOne(Query<UserModel>.Where(u => u.Name == userName));
-			if (user != null && user.Password == password)
-			{
-				principal = new GenericPrincipal(new GenericIdentity(userName), user.Roles);
-			}
-			return principal;
-		}
+        public Task ChallengeAsync(HttpAuthenticationChallengeContext context, CancellationToken cancellationToken)
+        {
+            var authHeader = new AuthenticationHeaderValue(
+                AuthorizationScheme,
+                "realm=\"" + (Realm ?? "default") + "\""); // TODO: экранировать кавычки
+            context.Result = new AddChallengeOnUnauthorizedResult(authHeader, context.Result);
+            return Task.FromResult(0);
+        }
 
-		private static bool ExtractUserNameAndPassword(string authorizationParameter, out string user, out string password)
-		{
-			user = null;
-			password = null;
+        #endregion
 
-			if (string.IsNullOrWhiteSpace(authorizationParameter))
-				return false;
+        private async Task<IPrincipal> Authenticate(string userName, string password)
+        {
+            IPrincipal principal = null;
+            var user =
+                await
+                    _storage.Users.Find(Builders<UserModel>.Filter.Where(u => u.Name == userName))
+                        .SingleOrDefaultAsync();
+            if (user != null && user.Password == password)
+            {
+                principal = new GenericPrincipal(new GenericIdentity(userName), user.Roles);
+            }
+            return principal;
+        }
 
-			byte[] credentialBytes;
+        private static bool ExtractUserNameAndPassword(
+            string authorizationParameter,
+            out string user,
+            out string password)
+        {
+            user = null;
+            password = null;
 
-			try
-			{
-				credentialBytes = Convert.FromBase64String(authorizationParameter);
-			}
-			catch (FormatException)
-			{
-				return false;
-			}
+            if (string.IsNullOrWhiteSpace(authorizationParameter))
+                return false;
 
-			string decodedCredentials;
+            byte[] credentialBytes;
 
-			try
-			{
-				decodedCredentials = _asciiEncodingWithExceptionFallback.GetString(credentialBytes);
-			}
-			catch (DecoderFallbackException)
-			{
-				return false;
-			}
+            try
+            {
+                credentialBytes = Convert.FromBase64String(authorizationParameter);
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
 
-			if (String.IsNullOrEmpty(decodedCredentials))
-				return false;
+            string decodedCredentials;
 
-			var colonIndex = decodedCredentials.IndexOf(':');
+            try
+            {
+                decodedCredentials = _asciiEncodingWithExceptionFallback.GetString(credentialBytes);
+            }
+            catch (DecoderFallbackException)
+            {
+                return false;
+            }
 
-			if (colonIndex == -1)
-				return false;
+            if (String.IsNullOrEmpty(decodedCredentials))
+                return false;
 
-			user = decodedCredentials.Substring(0, colonIndex);
-			password = decodedCredentials.Substring(colonIndex + 1);
-			return true;
-		}
+            var colonIndex = decodedCredentials.IndexOf(':');
 
-		public Task ChallengeAsync(HttpAuthenticationChallengeContext context, CancellationToken cancellationToken)
-		{
-			var authHeader = new AuthenticationHeaderValue(AuthorizationScheme, "realm=\"" + (Realm ?? "default") + "\""); // TODO: экранировать кавычки
-			context.Result = new AddChallengeOnUnauthorizedResult(authHeader, context.Result);
-			return Task.FromResult(0);
-		}
-	}
+            if (colonIndex == -1)
+                return false;
+
+            user = decodedCredentials.Substring(0, colonIndex);
+            password = decodedCredentials.Substring(colonIndex + 1);
+            return true;
+        }
+    }
 }
