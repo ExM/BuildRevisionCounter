@@ -1,8 +1,8 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 
-namespace BuildRevisionCounter.Model
+namespace BuildRevisionCounter.Core.DomainObjects
 {
-	public class UserModel
+	public class User
 	{
 		[BsonId]
 		public string Name { get; set; }
