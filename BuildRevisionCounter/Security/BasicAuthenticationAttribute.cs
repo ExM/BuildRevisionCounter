@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Principal;
@@ -6,7 +7,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http.Filters;
-using BuildRevisionCounter.Model;
+using BuildRevisionCounter.Core;
+using BuildRevisionCounter.Core.Repositories.Impl;
 using MongoDB.Driver.Builders;
 
 namespace BuildRevisionCounter.Security
@@ -22,12 +24,9 @@ namespace BuildRevisionCounter.Security
 		// used in practice and defines behavior only for ASCII.
 		private static readonly Encoding _asciiEncodingWithExceptionFallback =
 			Encoding.GetEncoding(Encoding.ASCII.CodePage, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
-
-		private static readonly MongoDBStorage _storage;
-
+        
 		static BasicAuthenticationAttribute()
 		{
-			_storage = new MongoDBStorage();
 		}
 
 		public bool AllowMultiple { get { return false; } }
@@ -53,8 +52,8 @@ namespace BuildRevisionCounter.Security
 				context.ErrorResult = new AuthenticationFailureResult("Invalid credentials", request);
 				return Task.FromResult(0);
 			}
-
-			context.Principal = Authenticate(user, password);
+            
+			context.Principal = Authenticate(user, password).Result;
 
 			if (context.Principal == null)
 				context.ErrorResult = new AuthenticationFailureResult("Invalid username or password", request);
@@ -62,10 +61,12 @@ namespace BuildRevisionCounter.Security
 			return Task.FromResult(0);
 		}
 
-		private IPrincipal Authenticate(string userName, string password)
+		private async Task<IPrincipal> Authenticate(string userName, string password)
 		{
+            var repository = new UserRepository();
+
 			IPrincipal principal = null;
-			var user = _storage.Users.FindOne(Query<UserModel>.Where(u => u.Name == userName));
+			var user = await repository.GetUserByNameAsync(userName);
 			if (user != null && user.Password == password)
 			{
 				principal = new GenericPrincipal(new GenericIdentity(userName), user.Roles);
