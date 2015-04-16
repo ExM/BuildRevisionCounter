@@ -1,7 +1,8 @@
-﻿using System;
+﻿using System.Configuration;
 using System.Collections.Generic;
-using System.Net;
 using System.Threading.Tasks;
+using BuildRevisionCounter.Core.Repositories.Impl;
+using System.Net;
 using System.Web.Http;
 using BuildRevisionCounter.Interfaces;
 using BuildRevisionCounter.Model;
@@ -14,19 +15,6 @@ namespace BuildRevisionCounter.Controllers
 	[BasicAuthentication]
 	public class CounterController : ApiController
 	{
-		private readonly IMongoDBStorage _mongoDbStorage;
-
-		/// <summary>
-		/// Конструктор контроллера номеров ревизий.
-		/// </summary>
-		/// <param name="mongoDbStorage">Объект для получения данных из БД Монго.</param>
-		public CounterController(IMongoDBStorage mongoDbStorage)
-		{
-			if (mongoDbStorage == null)
-				throw new ArgumentNullException("mongoDbStorage");
-
-			_mongoDbStorage = mongoDbStorage;
-		}
 
 		[HttpGet]
 		[Route("")]
