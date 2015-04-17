@@ -7,7 +7,13 @@ namespace BuildRevisionCounter
 	public static class MongoDBStorageFactory
 	{
 		private static readonly Lazy<MongoDBStorage> _defaultInstance =
-			new Lazy<MongoDBStorage>(() => FromConfigurationConnectionString());
+			new Lazy<MongoDBStorage>(
+				() =>
+				{
+					var s = FromConfigurationConnectionString();
+					s.Setup().Wait();
+					return s;
+				});
 
 		public static MongoDBStorage DefaultInstance { get { return _defaultInstance.Value; } }
 
