@@ -11,7 +11,7 @@ namespace BuildRevisionCounter
 				() =>
 				{
 					var s = FromConfigurationConnectionString();
-					s.Setup().Wait();
+					s.EnsureAdminUser().Wait();
 					return s;
 				});
 

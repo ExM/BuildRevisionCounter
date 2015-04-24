@@ -18,14 +18,9 @@ namespace BuildRevisionCounter
 			Users = database.GetCollection<UserModel>("users");
 		}
 
-		public async Task Setup()
-		{
-			await EnsureAdminUser();
-		}
-
 		public async Task EnsureAdminUser()
 		{
-			if (await Users.Find(u => u.Name == AdminName).CountAsync() == 0)
+			if (await Users.CountAsync(_ => true) == 0)
 			{
 				await CreateUser(AdminName, AdminPassword, AdminRoles);
 			}
