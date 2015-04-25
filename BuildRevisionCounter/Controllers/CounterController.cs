@@ -56,7 +56,7 @@ namespace BuildRevisionCounter.Controllers
 						ReturnDocument = ReturnDocument.After
 					});
 
-
+            if (result.NextNumber == 1) return 0;
 			return result.NextNumber;
 		}
 	}
