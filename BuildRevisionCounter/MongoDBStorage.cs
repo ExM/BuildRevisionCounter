@@ -1,16 +1,18 @@
 ﻿using System.Threading.Tasks;
+using BuildRevisionCounter.Interfaces;
 using BuildRevisionCounter.Model;
 using MongoDB.Driver;
 
 namespace BuildRevisionCounter
 {
-	public class MongoDBStorage
+	public class MongoDBStorage : IMongoDBStorage
 	{
 		public static readonly string AdminName = "admin";
 		public static readonly string AdminPassword = "admin";
 		public static readonly string[] AdminRoles = {"admin", "buildserver", "editor"};
-		public readonly IMongoCollection<RevisionModel> Revisions;
-		public readonly IMongoCollection<UserModel> Users;
+
+		public IMongoCollection<RevisionModel> Revisions { get; private set; }
+		public IMongoCollection<UserModel> Users { get; private set; }
 
 		public MongoDBStorage(IMongoDatabase database)
 		{

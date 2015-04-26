@@ -2,6 +2,7 @@
 using System.Net;
 using System.Threading.Tasks;
 using System.Web.Http;
+using BuildRevisionCounter.Interfaces;
 using BuildRevisionCounter.Model;
 using BuildRevisionCounter.Security;
 using MongoDB.Driver;
@@ -12,15 +13,18 @@ namespace BuildRevisionCounter.Controllers
 	[BasicAuthentication]
 	public class CounterController : ApiController
 	{
-		private readonly MongoDBStorage _storage;
+		private readonly IMongoDBStorage _mongoDbStorage;
 
-		public CounterController() : this(MongoDBStorageFactory.DefaultInstance)
+		/// <summary>
+		/// Конструктор контроллера номеров ревизий.
+		/// </summary>
+		/// <param name="mongoDbStorage">Объект для получения данных из БД Монго.</param>
+		public CounterController(IMongoDBStorage mongoDbStorage)
 		{
-		}
+			if (mongoDbStorage == null)
+				throw new ArgumentNullException("mongoDbStorage");
 
-		public CounterController(MongoDBStorage mongoDbStorage)
-		{
-			_storage = mongoDbStorage;
+			_mongoDbStorage = mongoDbStorage;
 		}
 
 		[HttpGet]
@@ -28,7 +32,7 @@ namespace BuildRevisionCounter.Controllers
 		[Authorize(Roles = "admin, editor, anonymous")]
 		public async Task<long> Current([FromUri] string revisionName)
 		{
-			var revision = await _storage.Revisions
+			var revision = await _mongoDbStorage.Revisions
 				.Find(r => r.Id == revisionName)
 				.SingleOrDefaultAsync();
 
@@ -43,7 +47,7 @@ namespace BuildRevisionCounter.Controllers
 		[Authorize(Roles = "buildserver")]
 		public async Task<long> Bumping([FromUri] string revisionName)
 		{
-			var result = await _storage.Revisions
+			var result = await _mongoDbStorage.Revisions
 				.FindOneAndUpdateAsync<RevisionModel>(
 					r => r.Id == revisionName,
 					Builders<RevisionModel>.Update
