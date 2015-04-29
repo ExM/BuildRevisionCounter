@@ -19,18 +19,23 @@ namespace BuildRevisionCounter
 {
 	public class Startup
 	{
+		public static HttpConfiguration config;
+
 		public void Configuration(IAppBuilder app)
 		{
-			var config = new HttpConfiguration();
+			config = new HttpConfiguration();
 
 			config.Formatters.Clear();
-			config.Formatters.Add(new JsonMediaTypeFormatter()); 
+			config.Formatters.Add(new JsonMediaTypeFormatter());
 
 			config.MapHttpAttributeRoutes();
 			config.EnsureInitialized();
 
 			app.UseNinjectMiddleware(CreateKernel);
 			app.UseNinjectWebApi(config);
+
+			System.Web.Mvc.AreaRegistration.RegisterAllAreas();
+
 		}
 
 		/// <summary>
