@@ -50,7 +50,7 @@ namespace BuildRevisionCounter.Controllers
 			var result = await _mongoDbStorage.Revisions
 				.FindOneAndUpdateAsync<RevisionModel>(
 					r => r.Id == revisionName,
-					Builders<RevisionModel>.Update
+					Builders<RevisionModel>.Update                    
 						.Inc(r => r.NextNumber, 1)
 						.SetOnInsert(r => r.Created, DateTime.UtcNow)
 						.Set(r => r.Updated, DateTime.UtcNow),
