@@ -9,6 +9,9 @@ using MongoDB.Driver;
 
 namespace BuildRevisionCounter.Controllers
 {
+	/// <summary>
+	/// Api controller.
+	/// </summary>
 	[RoutePrefix("api/counter")]
 	[BasicAuthentication]
 	public class CounterController : ApiController
@@ -27,8 +30,13 @@ namespace BuildRevisionCounter.Controllers
 			_mongoDbStorage = mongoDbStorage;
 		}
 
+		/// <summary>
+		/// Some desc.
+		/// </summary>
+		/// <param name="revisionName">Some param.</param>
+		/// <returns>Some result.</returns>
 		[HttpGet]
-		[Route("{revisionName}")]
+		[Route("{revisionName}")]		
 		[Authorize(Roles = "admin, editor, anonymous")]
 		public async Task<long> Current([FromUri] string revisionName)
 		{
@@ -42,6 +50,11 @@ namespace BuildRevisionCounter.Controllers
 			return revision.NextNumber;
 		}
 
+		/// <summary>
+		/// Some desc.
+		/// </summary>
+		/// <param name="revisionName">Some param.</param>
+		/// <returns>Some result.</returns>
 		[HttpPost]
 		[Route("{revisionName}")]
 		[Authorize(Roles = "buildserver")]
