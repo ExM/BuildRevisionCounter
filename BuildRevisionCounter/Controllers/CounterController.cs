@@ -18,25 +18,25 @@ namespace BuildRevisionCounter.Controllers
 		[HttpGet]
 		[Route("{revisionName}")]
 		[Authorize(Roles = "admin, editor, anonymous")]
-		public async Task<long> Current([FromUri] string revisionName)
+		public long Current([FromUri] string revisionName)
 		{
-            var repository = new RevisionRepository();
-            var revision = await repository.GetRevisionByIdAsync(revisionName);
+			var repository = RepositoryFactory.Instance.GetRevisionRepository();
+			var revision = repository.GetRevisionById(revisionName);
 				.SingleOrDefaultAsync();
 
-            if (revision == null)
-                throw new HttpResponseException(HttpStatusCode.NotFound);
+			if (revision == null)
+				throw new HttpResponseException(HttpStatusCode.NotFound);
 
-            return revision.NextNumber;
+			return revision.NextNumber;
 		}
 
 		[HttpPost]
 		[Route("{revisionName}")]
 		[Authorize(Roles = "buildserver")]
-		public async Task<long> Bumping([FromUri] string revisionName)
+		public long Bumping([FromUri] string revisionName)
 		{
-            var repository = new RevisionRepository();
-            var revision = await repository.IncrementRevisionAsync(revisionName);
+			var repository = RepositoryFactory.Instance.GetRevisionRepository();
+			var revision = repository.IncrementRevision(revisionName);
 					r => r.Id == revisionName,
 					Builders<RevisionModel>.Update
 						.Inc(r => r.NextNumber, 1)
@@ -44,10 +44,10 @@ namespace BuildRevisionCounter.Controllers
 						.Set(r => r.Updated, DateTime.UtcNow),
 					new FindOneAndUpdateOptions<RevisionModel>
 
-            if (revision == null)
-                throw new HttpResponseException(HttpStatusCode.NotFound);
+			if (revision == null)
+				throw new HttpResponseException(HttpStatusCode.NotFound);
 
-            return revision.NextNumber;
+			return revision.NextNumber;
 		}
 	}
 }
