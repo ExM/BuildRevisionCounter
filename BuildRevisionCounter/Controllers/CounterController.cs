@@ -63,21 +63,36 @@ namespace BuildRevisionCounter.Controllers
 		[Authorize(Roles = "buildserver")]
 		public async Task<long> Bumping([FromUri] string revisionName)
 		{
-			var result = await _mongoDbStorage.Revisions
-				.FindOneAndUpdateAsync<RevisionModel>(
-					r => r.Id == revisionName,
-					Builders<RevisionModel>.Update
-						.Inc(r => r.NextNumber, 1)
-						.SetOnInsert(r => r.Created, DateTime.UtcNow)
-						.Set(r => r.Updated, DateTime.UtcNow),
-					new FindOneAndUpdateOptions<RevisionModel>
-					{
-						IsUpsert = true,
-						ReturnDocument = ReturnDocument.After
-					});
+            var existRevision = await _mongoDbStorage.Revisions
+                .CountAsync(r => r.Id == revisionName);
+		    if (existRevision == 0)
+		    {
+		        await _mongoDbStorage.Revisions
+		            .InsertOneAsync(new RevisionModel
+		            {
+                        Id = revisionName,
+		                NextNumber = 0,
+		                Created = DateTime.UtcNow
+		            });
+		        return 0;
+		    }
+		    else
+		    {
+                var result = await _mongoDbStorage.Revisions
+                .FindOneAndUpdateAsync<RevisionModel>(
+                    r => r.Id == revisionName,
+                    Builders<RevisionModel>.Update
+                        .Inc(r => r.NextNumber, 1)
+                        .Set(r => r.Updated, DateTime.UtcNow),
+                    new FindOneAndUpdateOptions<RevisionModel>
+                    {
+                        IsUpsert = true,
+                        ReturnDocument = ReturnDocument.After
+                    });
 
 
-			return result.NextNumber;
+                return result.NextNumber;
+            }
 		}
 	}
 }
