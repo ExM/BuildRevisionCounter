@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using System.Web.Http;
 using BuildRevisionCounter.Controllers;
@@ -64,5 +65,28 @@ namespace BuildRevisionCounter.Tests.Controllers
 			var rev2 = await _controller.Current("CurrentReturnSameValueAsPreviousBumping");
 			Assert.AreEqual(rev1, rev2);
 		}
+
+        [Test]
+        public async Task GetAllRevisionReturnsAllRevision()
+        {
+            const string revName1 = "BumpingIncrementsRevisionNumber1";
+            const string revName2 = "BumpingIncrementsRevisionNumber2";
+            const string revName3 = "BumpingIncrementsRevisionNumber3";
+
+            await _controller.Bumping(revName1);
+            await _controller.Bumping(revName1);
+            await _controller.Bumping(revName2);
+            await _controller.Bumping(revName3);
+
+            var rev1 = await _controller.Current(revName1);
+            var rev2 = await _controller.Current(revName2);
+            var rev3 = await _controller.Current(revName3);
+
+            var result = await _controller.GetAllRevision();
+
+            Assert.IsTrue(result.Any(x => x.Id == revName1 && x.NextNumber == rev1));
+            Assert.IsTrue(result.Any(x => x.Id == revName2 && x.NextNumber == rev2));
+            Assert.IsTrue(result.Any(x => x.Id == revName3 && x.NextNumber == rev3));
+        }
 	}
 }

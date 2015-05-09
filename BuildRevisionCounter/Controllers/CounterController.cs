@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using System.Web.Http;
@@ -26,6 +27,21 @@ namespace BuildRevisionCounter.Controllers
 
 			_mongoDbStorage = mongoDbStorage;
 		}
+
+        [HttpGet]
+        [Route("")]
+        [Authorize(Roles = "admin, editor, anonymous")]
+        public async Task<IReadOnlyCollection<RevisionModel>> GetAllRevision()
+        {
+            var revisions = await _mongoDbStorage.Revisions
+                .Find(r => true)
+                .ToListAsync();
+
+            if (revisions == null)
+                throw new HttpResponseException(HttpStatusCode.NotFound);
+
+            return revisions;
+        }
 
 		[HttpGet]
 		[Route("{revisionName}")]
