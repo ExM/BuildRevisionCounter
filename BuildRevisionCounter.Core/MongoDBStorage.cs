@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Configuration;
 using System.Linq;
-using System.Threading;
 using BuildRevisionCounter.Core.DomainObjects;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
@@ -10,62 +9,50 @@ namespace BuildRevisionCounter.Core
 {
 	public class MongoContext
 	{
-        private static readonly Object SLock = new Object();
-        private static MongoContext _instance = null;
+		private static readonly Object SLock = new Object();
+		private static volatile MongoContext _instance = null;
 
-        private readonly IMongoClient _client;
-        private readonly IMongoDatabase _database;
-
-        private MongoContext()
+		private MongoContext()
 		{
-            var mongoHost = ConfigurationManager.ConnectionStrings["MongoDBStorage"].ConnectionString;
-            var mongoDbName = ConfigurationManager.AppSettings.GetValues("MongoDbName").First();
+			var connectionString = ConfigurationManager.ConnectionStrings["MongoDBStorage"].ConnectionString;
+			var database = MongoDatabase.Create(connectionString);
 
-            _client = new MongoClient(mongoHost);
-            _database = _client.GetDatabase(mongoDbName);
-            
-            CreateAdmin();
+			Revisions = database.GetCollection<Revision>("revisions");
+			Users = database.GetCollection<User>("users");
+
+			CreateAdmin();
 		}
 
-        public static MongoContext Instance
-	    {
-	        get
-	        {
-	            if (_instance != null) return _instance;
-	            Monitor.Enter(SLock);
-                var temp = new MongoContext();
-	            Interlocked.Exchange(ref _instance, temp);
-	            Monitor.Exit(SLock);
-	            return _instance;
-	        }
-	    }
+		public static MongoContext Instance
+		{
+			get
+			{
+				if (_instance == null)
+				{
+					lock (SLock)
+					{
+						if (_instance == null)
+							_instance = new MongoContext();
+					}
+				}
+				return _instance;
+			}
+		}
 
-	    public IMongoClient Client
-        {
-            get { return _client; }
-        }
+		public readonly MongoCollection<Revision> Revisions;
+		public readonly MongoCollection<User> Users;
 
-        public IMongoCollection<Revision> Revisions
-        {
-            get { return _database.GetCollection<Revision>("revisions"); }
-        }
-
-        public IMongoCollection<User> Users
-        {
-            get { return _database.GetCollection<User>("users"); }
-        }
-
-        private void CreateAdmin()
-        {
-            if (Users.Find(l => true).SingleOrDefaultAsync() == null)
-            {
-                Users.InsertOneAsync(new User
-                {
-                    Name = "admin",
-                    Password = "admin",
-                    Roles = new[] { "admin", "buildserver", "editor" }
-                });
-            }
-        }
+		private void CreateAdmin()
+		{
+			if (!Users.AsQueryable().Any())
+			{
+				Users.Insert(new User
+				{
+					Name = "admin",
+					Password = "admin",
+					Roles = new[] { "admin", "buildserver", "editor" }
+				});
+			}
+		}
 	}
 }

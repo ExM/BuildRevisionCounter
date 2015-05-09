@@ -1,6 +1,4 @@
-﻿using System.Configuration;
-using System.Threading.Tasks;
-using BuildRevisionCounter.Core.Repositories.Impl;
+﻿using BuildRevisionCounter.Core;
 using System.Net;
 using System.Web.Http;
 using BuildRevisionCounter.Security;
@@ -15,29 +13,29 @@ namespace BuildRevisionCounter.Controllers
 		[HttpGet]
 		[Route("{revisionName}")]
 		[Authorize(Roles = "admin, editor, anonymous")]
-		public async Task<long> Current([FromUri] string revisionName)
+		public long Current([FromUri] string revisionName)
 		{
-            var repository = new RevisionRepository();
-            var revision = await repository.GetRevisionByIdAsync(revisionName);
+			var repository = RepositoryFactory.Instance.GetRevisionRepository();
+			var revision = repository.GetRevisionById(revisionName);
 
-            if (revision == null)
-                throw new HttpResponseException(HttpStatusCode.NotFound);
+			if (revision == null)
+				throw new HttpResponseException(HttpStatusCode.NotFound);
 
-            return revision.NextNumber;
+			return revision.NextNumber;
 		}
 
 		[HttpPost]
 		[Route("{revisionName}")]
 		[Authorize(Roles = "buildserver")]
-		public async Task<long> Bumping([FromUri] string revisionName)
+		public long Bumping([FromUri] string revisionName)
 		{
-            var repository = new RevisionRepository();
-            var revision = await repository.IncrementRevisionAsync(revisionName);
+			var repository = RepositoryFactory.Instance.GetRevisionRepository();
+			var revision = repository.IncrementRevision(revisionName);
 
-            if (revision == null)
-                throw new HttpResponseException(HttpStatusCode.NotFound);
+			if (revision == null)
+				throw new HttpResponseException(HttpStatusCode.NotFound);
 
-            return revision.NextNumber;
+			return revision.NextNumber;
 		}
 	}
 }
