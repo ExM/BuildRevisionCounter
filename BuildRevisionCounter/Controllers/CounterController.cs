@@ -54,7 +54,7 @@ namespace BuildRevisionCounter.Controllers
 		[HttpPost]
 		[Route("{revisionName}")]
 		[Authorize(Roles = "buildserver")]
-		public async Task<long> Bumping([FromUri] string revisionName)
+		public long Bumping([FromUri] string revisionName)
 		{
 			// попробуем обновить документ
 			var result = await FindOneAndUpdateRevisionModelAsync(revisionName);

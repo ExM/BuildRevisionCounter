@@ -1,23 +1,23 @@
-using System.Threading.Tasks;
 using BuildRevisionCounter.Core.Converters;
-using MongoDB.Driver;
+using BuildRevisionCounter.Core.DomainObjects;
+using MongoDB.Driver.Builders;
 
 namespace BuildRevisionCounter.Core.Repositories.Impl
 {
-    public class UserRepository : IUserRepository
-    {
-        private readonly MongoContext _storage;
+	internal class UserRepository : IUserRepository
+	{
+		private readonly MongoContext _storage;
 
-        public UserRepository()
-        {
-            _storage = MongoContext.Instance;
-        }
+		public UserRepository()
+		{
+			_storage = MongoContext.Instance;
+		}
 
-        public async Task<Contract.User> GetUserByNameAsync(string userName)
-        {
-            var user = await _storage.Users.Find(l => l.Name == userName).SingleOrDefaultAsync();
+		public Contract.User GetUserByName(string userName)
+		{
+			var user = _storage.Users.FindOne(Query<User>.Where(u => u.Name == userName));
 
-            return user.ToContract();
-        }
-    }
+			return user.ToContract();
+		}
+	}
 }

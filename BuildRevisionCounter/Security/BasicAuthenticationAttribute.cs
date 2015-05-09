@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Configuration;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Principal;
@@ -8,8 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http.Filters;
 using BuildRevisionCounter.Core;
-using BuildRevisionCounter.Core.Repositories.Impl;
-using MongoDB.Driver.Builders;
 
 namespace BuildRevisionCounter.Security
 {
@@ -17,19 +14,23 @@ namespace BuildRevisionCounter.Security
 	{
 		private const string AuthorizationScheme = "Basic";
 
-		private static readonly IPrincipal _anonymousPrincipal = new GenericPrincipal(new GenericIdentity("anonymous"), new[] { "anonymous" });
+		private static readonly IPrincipal _anonymousPrincipal = new GenericPrincipal(new GenericIdentity("anonymous"),
+			new[] {"anonymous"});
 
 		// The currently approved HTTP 1.1 specification says characters here are ISO-8859-1.
 		// However, the current draft updated specification for HTTP 1.1 indicates this encoding is infrequently
 		// used in practice and defines behavior only for ASCII.
 		private static readonly Encoding _asciiEncodingWithExceptionFallback =
 			Encoding.GetEncoding(Encoding.ASCII.CodePage, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
-        
+
 		static BasicAuthenticationAttribute()
 		{
 		}
 
-		public bool AllowMultiple { get { return false; } }
+		public bool AllowMultiple
+		{
+			get { return false; }
+		}
 
 		public string Realm { get; set; }
 
@@ -52,8 +53,8 @@ namespace BuildRevisionCounter.Security
 				context.ErrorResult = new AuthenticationFailureResult("Invalid credentials", request);
 				return Task.FromResult(0);
 			}
-            
-			context.Principal = Authenticate(user, password).Result;
+
+			context.Principal = Authenticate(user, password);
 
 			if (context.Principal == null)
 				context.ErrorResult = new AuthenticationFailureResult("Invalid username or password", request);
@@ -61,12 +62,12 @@ namespace BuildRevisionCounter.Security
 			return Task.FromResult(0);
 		}
 
-		private async Task<IPrincipal> Authenticate(string userName, string password)
+		private IPrincipal Authenticate(string userName, string password)
 		{
-            var repository = new UserRepository();
+			var repository = RepositoryFactory.Instance.GetUserRepository();
 
 			IPrincipal principal = null;
-			var user = await repository.GetUserByNameAsync(userName);
+			var user = repository.GetUserByName(userName);
 			if (user != null && user.Password == password)
 			{
 				principal = new GenericPrincipal(new GenericIdentity(userName), user.Roles);
@@ -119,7 +120,8 @@ namespace BuildRevisionCounter.Security
 
 		public Task ChallengeAsync(HttpAuthenticationChallengeContext context, CancellationToken cancellationToken)
 		{
-			var authHeader = new AuthenticationHeaderValue(AuthorizationScheme, "realm=\"" + (Realm ?? "default") + "\""); // TODO: экранировать кавычки
+			var authHeader = new AuthenticationHeaderValue(AuthorizationScheme, "realm=\"" + (Realm ?? "default") + "\"");
+			// TODO: экранировать кавычки
 			context.Result = new AddChallengeOnUnauthorizedResult(authHeader, context.Result);
 			return Task.FromResult(0);
 		}

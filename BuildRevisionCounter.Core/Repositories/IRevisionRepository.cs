@@ -3,10 +3,10 @@ using BuildRevisionCounter.Contract;
 
 namespace BuildRevisionCounter.Core.Repositories
 {
-    public interface IRevisionRepository
-    {
-        Task<Contract.Revision> GetRevisionByIdAsync(string revisionId);
+	public interface IRevisionRepository
+	{
+		Contract.Revision GetRevisionById(string revisionId);
 
-        Task<Contract.Revision> IncrementRevisionAsync(string revisionId);
-    }
+		Contract.Revision IncrementRevision(string revisionId);
+	}
 }

@@ -24,7 +24,7 @@ namespace BuildRevisionCounter
 			var config = new HttpConfiguration();
 
 			config.Formatters.Clear();
-			config.Formatters.Add(new JsonMediaTypeFormatter()); 
+			config.Formatters.Add(new JsonMediaTypeFormatter());
 
 			config.MapHttpAttributeRoutes();
 			config.EnsureInitialized();
