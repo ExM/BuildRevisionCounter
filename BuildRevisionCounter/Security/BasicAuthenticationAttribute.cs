@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http.Filters;
 using BuildRevisionCounter.Model;
+using MongoDB.Driver;
 using MongoDB.Driver.Builders;
 
 namespace BuildRevisionCounter.Security
@@ -27,7 +28,7 @@ namespace BuildRevisionCounter.Security
 
 		static BasicAuthenticationAttribute()
 		{
-			_storage = new MongoDBStorage();
+			_storage = MongoDBStorage.Instance;
 		}
 
 		public bool AllowMultiple { get { return false; } }
@@ -54,7 +55,7 @@ namespace BuildRevisionCounter.Security
 				return Task.FromResult(0);
 			}
 
-			context.Principal = Authenticate(user, password);
+			context.Principal = Authenticate(user, password).Result;
 
 			if (context.Principal == null)
 				context.ErrorResult = new AuthenticationFailureResult("Invalid username or password", request);
@@ -62,10 +63,10 @@ namespace BuildRevisionCounter.Security
 			return Task.FromResult(0);
 		}
 
-		private IPrincipal Authenticate(string userName, string password)
+		private async Task<IPrincipal> Authenticate(string userName, string password)
 		{
 			IPrincipal principal = null;
-			var user = _storage.Users.FindOne(Query<UserModel>.Where(u => u.Name == userName));
+			var user = await _storage.Users.Find(l => l.Name == userName).SingleOrDefaultAsync();
 			if (user != null && user.Password == password)
 			{
 				principal = new GenericPrincipal(new GenericIdentity(userName), user.Roles);

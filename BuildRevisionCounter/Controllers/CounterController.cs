@@ -1,10 +1,8 @@
 ﻿using BuildRevisionCounter.Model;
 using MongoDB.Driver;
-using MongoDB.Driver.Builders;
 using System;
 using System.Net;
 using System.Threading.Tasks;
-using System.Web;
 using System.Web.Http;
 using BuildRevisionCounter.Security;
 
@@ -18,16 +16,16 @@ namespace BuildRevisionCounter.Controllers
 
 		static CounterController()
 		{
-			_storage = new MongoDBStorage();
+			_storage = MongoDBStorage.Instance;
 		}
 
 		[HttpGet]
 		[Route("{revisionName}")]
 		[Authorize(Roles = "admin, editor, anonymous")]
-		public long Current([FromUri] string revisionName)
+		public async Task<long> Current([FromUri] string revisionName)
 		{
-			var q = Query<RevisionModel>.Where(_ => _.Id == revisionName);
-			var revision = _storage.Revisions.FindOne(q);
+			var q = Builders<RevisionModel>.Filter.Eq(_ => _.Id, revisionName);
+			var revision = await _storage.Revisions.Find(q).FirstOrDefaultAsync();
 
 			if (revision == null)
 				throw new HttpResponseException(HttpStatusCode.NotFound);
@@ -38,20 +36,21 @@ namespace BuildRevisionCounter.Controllers
 		[HttpPost]
 		[Route("{revisionName}")]
 		[Authorize(Roles = "buildserver")]
-		public long Bumping([FromUri] string revisionName)
+		public async Task<long> Bumping([FromUri] string revisionName)
 		{
-			var result = _storage.Revisions.FindAndModify(new FindAndModifyArgs()
+			var options = new FindOneAndUpdateOptions<RevisionModel>
 			{
-				Query = Query<RevisionModel>.Where(_ => _.Id == revisionName),
-				Upsert = true,
-				Update = Update<RevisionModel>
-					.SetOnInsert(_ => _.Created, DateTime.UtcNow)
-					.Inc(_ => _.NextNumber, 1)
-					.Set(_ => _.Updated, DateTime.UtcNow),
-				VersionReturned = FindAndModifyDocumentVersion.Modified
-			});
+				IsUpsert = true,
+				ReturnDocument = ReturnDocument.After
+			};
 
-			var revision = result.GetModifiedDocumentAs<RevisionModel>();
+			var revision = await _storage.Revisions.FindOneAndUpdateAsync(
+				Builders<RevisionModel>.Filter.Eq(r => r.Id, revisionName),
+				Builders<RevisionModel>.Update
+					.SetOnInsert(l => l.Created, DateTime.UtcNow)
+					.Inc(l => l.NextNumber, 1)
+					.Set(l => l.Updated, DateTime.UtcNow),
+				options);
 
 			return revision.NextNumber;
 		}

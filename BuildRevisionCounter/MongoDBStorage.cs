@@ -13,25 +13,57 @@ namespace BuildRevisionCounter
 {
 	public class MongoDBStorage
 	{
-		public readonly MongoCollection<RevisionModel> Revisions;
-		public readonly MongoCollection<UserModel> Users;
+		private static readonly Object SLock = new Object();
+		private static MongoDBStorage _instance = null;
 
-		public MongoDBStorage()
+		private readonly IMongoClient _client;
+		private readonly IMongoDatabase _database;
+
+		private MongoDBStorage()
 		{
 			string connectionString = ConfigurationManager.ConnectionStrings["MongoDBStorage"].ConnectionString;
-			var database = MongoDatabase.Create(connectionString);
+			var url = new MongoUrl(connectionString);
 
-			Revisions = database.GetCollection<RevisionModel>("revisions");
-			Users = database.GetCollection<UserModel>("users");
+			_client = new MongoClient(url);
+			_database = _client.GetDatabase(url.DatabaseName);
 
 			CreateAdmin();
 		}
 
+		public static MongoDBStorage Instance
+		{
+			get
+			{
+				if (_instance == null)
+				{
+					lock (SLock)
+					{
+						if (_instance == null)
+							_instance = new MongoDBStorage();
+					}
+				}
+				return _instance;
+			}
+		}
+
+		public IMongoCollection<RevisionModel> Revisions
+		{
+			get { return _database.GetCollection<RevisionModel>("revisions"); }
+		}
+
+		public IMongoCollection<UserModel> Users
+		{
+			get { return _database.GetCollection<UserModel>("users"); }
+		}
+
 		private void CreateAdmin()
 		{
-			if (!Users.AsQueryable().Any())
+			var anyUser = Users.Find(l => true).SingleOrDefaultAsync();
+			anyUser.Wait();
+
+			if (anyUser.Result == null)
 			{
-				Users.Insert(new UserModel
+				Users.InsertOneAsync(new UserModel
 				{
 					Name = "admin",
 					Password = "admin",
