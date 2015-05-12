@@ -28,20 +28,25 @@ namespace BuildRevisionCounter.Controllers
 			_mongoDbStorage = mongoDbStorage;
 		}
 
-        [HttpGet]
-        [Route("")]
-        [Authorize(Roles = "admin, editor, anonymous")]
-        public async Task<IReadOnlyCollection<RevisionModel>> GetAllRevision()
-        {
-            var revisions = await _mongoDbStorage.Revisions
-                .Find(r => true)
-                .ToListAsync();
+		[HttpGet]
+		[Route("")]
+		[Authorize(Roles = "admin, editor, anonymous")]
+		public async Task<IReadOnlyCollection<RevisionModel>> GetAllRevision([FromUri] Int32 pageSize=20, [FromUri] Int32 pageNumber=1)
+		{
+			if (pageSize < 1 || pageNumber < 1)
+				throw new HttpResponseException(HttpStatusCode.BadRequest);
 
-            if (revisions == null)
-                throw new HttpResponseException(HttpStatusCode.NotFound);
+			var revisions = await _mongoDbStorage.Revisions
+				.Find(r => true)
+				.Skip(pageSize * (pageNumber - 1))
+				.Limit(pageSize)
+				.ToListAsync();
 
-            return revisions;
-        }
+			if (revisions == null)
+				throw new HttpResponseException(HttpStatusCode.NotFound);
+
+			return revisions;
+		}
 
 		[HttpGet]
 		[Route("{revisionName}")]
@@ -58,41 +63,49 @@ namespace BuildRevisionCounter.Controllers
 			return revision.NextNumber;
 		}
 
+		/// <summary>
+		///		Объект синхранизации вставки 
+		/// </summary>
+		private readonly Object _sync = new Object();
+
 		[HttpPost]
 		[Route("{revisionName}")]
 		[Authorize(Roles = "buildserver")]
 		public async Task<long> Bumping([FromUri] string revisionName)
 		{
-            var existRevision = await _mongoDbStorage.Revisions
-                .CountAsync(r => r.Id == revisionName);
-		    if (existRevision == 0)
-		    {
-		        await _mongoDbStorage.Revisions
-		            .InsertOneAsync(new RevisionModel
-		            {
-                        Id = revisionName,
-		                NextNumber = 0,
-		                Created = DateTime.UtcNow
-		            });
-		        return 0;
-		    }
-		    else
-		    {
-                var result = await _mongoDbStorage.Revisions
-                .FindOneAndUpdateAsync<RevisionModel>(
-                    r => r.Id == revisionName,
-                    Builders<RevisionModel>.Update
-                        .Inc(r => r.NextNumber, 1)
-                        .Set(r => r.Updated, DateTime.UtcNow),
-                    new FindOneAndUpdateOptions<RevisionModel>
-                    {
-                        IsUpsert = true,
-                        ReturnDocument = ReturnDocument.After
-                    });
+			// накладывааем блокировку на проверку каунтера 
+			// и вставку начального значения если каунтера еще нет
+			lock (_sync)
+			{
+				var existRevision = _mongoDbStorage.Revisions
+					.CountAsync(r => r.Id == revisionName)
+					.Result;
+				if (existRevision == 0)
+				{
+					_mongoDbStorage.Revisions
+						.InsertOneAsync(new RevisionModel
+						{
+							Id = revisionName,
+							NextNumber = 0,
+							Created = DateTime.UtcNow
+						}).Wait();
+					return 0;
+				}
+			}
 
-
-                return result.NextNumber;
-            }
+			// если каунтер уже создан, то отправляем запрос в монгу
+			var result = await _mongoDbStorage.Revisions
+				.FindOneAndUpdateAsync<RevisionModel>(
+					r => r.Id == revisionName,
+					Builders<RevisionModel>.Update
+						.Inc(r => r.NextNumber, 1)
+						.Set(r => r.Updated, DateTime.UtcNow),
+					new FindOneAndUpdateOptions<RevisionModel>
+					{
+						IsUpsert = true,
+						ReturnDocument = ReturnDocument.After
+					});
+			return result.NextNumber;
 		}
 	}
 }

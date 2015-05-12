@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using System.Web.Http;
@@ -50,13 +51,20 @@ namespace BuildRevisionCounter.Tests.Controllers
 			Assert.AreEqual(0, rev);
 		}
 
-        [Test]
-        public async Task BumpingNewRevisionMayBeInvokedMultipleTimes()
-        {
-            const string revName = "BumpingNewRevisionMayBeInvokedMultipleTimes";
-            await _controller.Bumping(revName);
-            await _controller.Bumping(revName);
-        }
+		[Test]
+		public async Task BumpingNewRevisionMayBeInvokedMultipleTimes()
+		{
+			try
+			{
+				const string revName = "BumpingNewRevisionMayBeInvokedMultipleTimes";
+				await _controller.Bumping(revName);
+				await _controller.Bumping(revName);
+			}
+			catch (Exception)
+			{
+				Assert.Fail("Ошибка при создании одного каунтера из разных потоков");
+			}
+		}
 
 		[Test]
 		public async Task BumpingIncrementsRevisionNumber()
@@ -96,5 +104,53 @@ namespace BuildRevisionCounter.Tests.Controllers
             Assert.IsTrue(result.Any(x => x.Id == revName2 && x.NextNumber == rev2));
             Assert.IsTrue(result.Any(x => x.Id == revName3 && x.NextNumber == rev3));
         }
+
+		[Test]
+		public async Task GetAllRevisionReturnsSecondPage()
+		{
+			// пересоздадим БД перед этим тестом,
+			// он должен проводиться на чистой БД
+			SetUpAsync().Wait();
+
+			for (int i = 0; i < 10; i++)
+			{
+				string revName = "GetAllRevisionReturnsSecondPage" + i.ToString();
+				await _controller.Bumping(revName);
+			}
+
+			var result = await _controller.GetAllRevision(3, 2);
+
+			Assert.IsTrue(result.Any(x => x.Id == "GetAllRevisionReturnsSecondPage3"));
+			Assert.IsTrue(result.Any(x => x.Id == "GetAllRevisionReturnsSecondPage4"));
+			Assert.IsTrue(result.Any(x => x.Id == "GetAllRevisionReturnsSecondPage5"));
+		}
+
+		[Test]
+		public async Task GetAllRevisionArgumentExceptionPageSize()
+		{
+			try
+			{
+				await _controller.GetAllRevision(0, 2);
+				Assert.Fail();
+			}
+			catch (HttpResponseException ex)
+			{
+				Assert.AreEqual(HttpStatusCode.BadRequest, ex.Response.StatusCode);
+			}
+		}
+
+		[Test]
+		public async Task GetAllRevisionArgumentExceptionPageNumber()
+		{
+			try
+			{
+				await _controller.GetAllRevision(3, 0);
+				Assert.Fail();
+			}
+			catch (HttpResponseException ex)
+			{
+				Assert.AreEqual(HttpStatusCode.BadRequest, ex.Response.StatusCode);
+			}
+		}
 	}
 }
