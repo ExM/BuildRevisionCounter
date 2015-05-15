@@ -1,68 +1,47 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Sockets;
 using System.Text;
+using Microsoft.Owin.Hosting;
 using NUnit.Framework;
+using BuildRevisionCounter;
 
 namespace BuildRevisionCounterTest
 {
-    [TestFixture]
-    public class IntegrationTest : InMemoryTest
+    public abstract class InMemoryTest
     {
-        [Test]
-        public void Bump_New_Revision()
-        {
-            var revName = "revision_" + DateTime.Now.Ticks;
-            var apiUri = "api/counter/" + revName;
+        private IDisposable _application;
+        protected HttpClient HttpClient;
+        private string _uri;
+        protected string Uri { get { return _uri; } }
 
-            var body = SendPostRequest(apiUri);
-            Assert.AreEqual(0, int.Parse(body));
+        [TestFixtureSetUp]
+        public void Setup()
+        {
+            var port = GetFreeTcpPort();
+            _uri = string.Format("http://localhost:{0}", port);
+            _application = WebApp.Start<Startup>(_uri);
         }
 
-        [Test]
-        public void Bump_Existing_Revision()
+        [TestFixtureTearDown]
+        public void TearDown()
         {
-            var revName = "revision_" + DateTime.Now.Ticks;
-            var apiUri = "api/counter/" + revName;
-
-            SendPostRequest(apiUri); //counter == 0
-
-            var body = SendPostRequest(apiUri); //counter == 1
-            Assert.AreEqual(1, int.Parse(body));
+            _application.Dispose();
         }
 
-        [Test]
-        public void Get_Current_Revision()
+        private static int GetFreeTcpPort()
         {
-            var revName = "revision_" + DateTime.Now.Ticks;
-            var apiUri = "api/counter/" + revName;
-
-            SendPostRequest(apiUri); //counter == 0
-            SendPostRequest(apiUri); // counter == 1
-
-            var body = SendGetRequest(apiUri);
-            Assert.AreEqual(1, int.Parse(body));
+            var l = new TcpListener(IPAddress.Loopback, 0);
+            l.Start();
+            var port = ((IPEndPoint) l.LocalEndpoint).Port;
+            l.Stop();
+            return port;
         }
 
-        [Test]
-        public void Get_Current_Revision_NotFound()
-        {
-            var body = SendGetRequest("api/counter/nonexistingrevision");
-            Assert.AreEqual("", body);
-        }
-
-        [Test]
-        public void Integration_Test()
-        {
-            Bump_New_Revision();
-            Bump_Existing_Revision();
-
-            Get_Current_Revision();
-            Get_Current_Revision_NotFound();
-        }
-
-        private string SendGetRequest(string apiUri, string userName = "admin", string password = "admin")
+        protected string SendGetRequest(string apiUri, string userName = "admin", string password = "admin")
         {
             using (HttpClient = new HttpClient { BaseAddress = new Uri(Uri) })
             {
@@ -80,7 +59,7 @@ namespace BuildRevisionCounterTest
             }
         }
 
-        private string SendPostRequest(string apiUri, string userName = "admin", string password = "admin")
+        protected string SendPostRequest(string apiUri, string userName = "admin", string password = "admin")
         {
             using (HttpClient = new HttpClient { BaseAddress = new Uri(Uri) })
             {
@@ -103,4 +82,5 @@ namespace BuildRevisionCounterTest
             }
         }
     }
+
 }
