@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -35,7 +36,7 @@ namespace BuildRevisionCounter.Tests.Controllers
 		{
 			try
 			{
-				var rev = await _controller.Current("CurrentThrowsExceptionIfRevisionNotFound");
+				await _controller.Current("CurrentThrowsExceptionIfRevisionNotFound");
 				Assert.Fail();
 			}
 			catch (HttpResponseException ex)
@@ -54,16 +55,21 @@ namespace BuildRevisionCounter.Tests.Controllers
 		[Test]
 		public async Task BumpingNewRevisionMayBeInvokedMultipleTimes()
 		{
-			try
+			string revName = "BumpingNewRevisionMayBeInvokedMultipleTimes" + Guid.NewGuid().ToString();
+
+			// запустим сразу n потоков вставки
+			const int n = 5;
+			List<Task> taskList = new List<Task>();
+			for (int i = 0; i < n; i++)
 			{
-				const string revName = "BumpingNewRevisionMayBeInvokedMultipleTimes";
-				await _controller.Bumping(revName);
-				await _controller.Bumping(revName);
+				taskList.Add(Task.Run(async () => await _controller.Bumping(revName)));
 			}
-			catch (Exception)
-			{
-				Assert.Fail("Ошибка при создании одного каунтера из разных потоков");
-			}
+			// дождемся окончания всех потококв
+			Task.WaitAll(taskList.ToArray());
+
+			// проверим результатнашего каунтера
+			var res = await _controller.Current(revName);
+			Assert.AreEqual(n - 1, res);
 		}
 
 		[Test]
