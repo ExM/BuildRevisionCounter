@@ -63,49 +63,61 @@ namespace BuildRevisionCounter.Controllers
 			return revision.NextNumber;
 		}
 
-		/// <summary>
-		///		Объект синхранизации вставки 
-		/// </summary>
-		private readonly Object _sync = new Object();
-
 		[HttpPost]
 		[Route("{revisionName}")]
 		[Authorize(Roles = "buildserver")]
 		public async Task<long> Bumping([FromUri] string revisionName)
 		{
-			// накладывааем блокировку на проверку каунтера 
-			// и вставку начального значения если каунтера еще нет
-			lock (_sync)
+			// попробуем обновить документ
+			var result = await FindOneAndUpdateRevisionModelAsync(revisionName);
+
+			if (result == null)
 			{
-				var existRevision = _mongoDbStorage.Revisions
-					.CountAsync(r => r.Id == revisionName)
-					.Result;
-				if (existRevision == 0)
+				// если не получилось, значит документ еще не был создан
+				// создадим его с начальным значением 0
+				try
 				{
-					_mongoDbStorage.Revisions
+					await _mongoDbStorage.Revisions
 						.InsertOneAsync(new RevisionModel
 						{
 							Id = revisionName,
 							NextNumber = 0,
 							Created = DateTime.UtcNow
-						}).Wait();
+						});
 					return 0;
+				}
+				catch (MongoWriteException e)
+				{
+					// если прои вставке произошла ошибка значит мы не успели и запись там уже есть
+					// и теперь попытка обновления должна пройти без ошибок
+					result = FindOneAndUpdateRevisionModelAsync(revisionName).Result;
 				}
 			}
 
-			// если каунтер уже создан, то отправляем запрос в монгу
+			return result.NextNumber;
+		}
+
+		/// <summary>
+		///		Инкриментит каунтер в БД
+		/// </summary>
+		/// <param name="revisionName"></param>
+		/// <returns></returns>
+		private async Task<RevisionModel> FindOneAndUpdateRevisionModelAsync(string revisionName)
+		{
 			var result = await _mongoDbStorage.Revisions
 				.FindOneAndUpdateAsync<RevisionModel>(
 					r => r.Id == revisionName,
 					Builders<RevisionModel>.Update
 						.Inc(r => r.NextNumber, 1)
+						.SetOnInsert(r => r.Created, DateTime.UtcNow)
 						.Set(r => r.Updated, DateTime.UtcNow),
 					new FindOneAndUpdateOptions<RevisionModel>
 					{
-						IsUpsert = true,
+						IsUpsert = false,
 						ReturnDocument = ReturnDocument.After
 					});
-			return result.NextNumber;
+
+			return result;
 		}
 	}
 }
