@@ -18,6 +18,8 @@ namespace BuildRevisionCounter
 		{
 			Revisions = database.GetCollection<RevisionModel>("revisions");
 			Users = database.GetCollection<UserModel>("users");
+
+		    Task.Run(() => EnsureAdminUser()).Wait(); 
 		}
 
 		public async Task SetUp()
