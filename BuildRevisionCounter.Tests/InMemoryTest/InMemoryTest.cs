@@ -7,9 +7,8 @@ using System.Net.Sockets;
 using System.Text;
 using Microsoft.Owin.Hosting;
 using NUnit.Framework;
-using BuildRevisionCounter;
 
-namespace BuildRevisionCounterTest
+namespace BuildRevisionCounter.Tests
 {
     public abstract class InMemoryTest
     {

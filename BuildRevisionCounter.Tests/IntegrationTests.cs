@@ -1,11 +1,13 @@
 ﻿using System;
 using NUnit.Framework;
 
-namespace BuildRevisionCounterTest
+namespace BuildRevisionCounter.Tests
 {
     [TestFixture]
     public class IntegrationTest : InMemoryTest
     {
+        private const int _counterStartValue = 0; //Первоначальное значение счетчика равно 0
+
         [Test]
         public void Bump_New_Revision()
         {
@@ -13,19 +15,22 @@ namespace BuildRevisionCounterTest
             var apiUri = "api/counter/" + revName;
 
             var body = SendPostRequest(apiUri);
-            Assert.AreEqual(1, int.Parse(body));
+
+            Assert.AreEqual(_counterStartValue, int.Parse(body));
         }
 
         [Test]
         public void Bump_Existing_Revision()
         {
-            var revName = "revision_" + DateTime.Now.Ticks;
+            var revName = "revision_" + Guid.NewGuid();
             var apiUri = "api/counter/" + revName;
 
-            SendPostRequest(apiUri); //counter == 1
+            SendPostRequest(apiUri); //counter == 0
 
-            var body = SendPostRequest(apiUri); //counter == 2
-            Assert.AreEqual(2, int.Parse(body));
+            var body = SendPostRequest(apiUri); //counter == 1
+            
+            var currentCounter = 1;
+            Assert.AreEqual(currentCounter, int.Parse(body));
         }
 
         [Test]
@@ -34,11 +39,13 @@ namespace BuildRevisionCounterTest
             var revName = "revision_" + Guid.NewGuid();
             var apiUri = "api/counter/" + revName;
 
-            SendPostRequest(apiUri); //counter == 1
-            SendPostRequest(apiUri); // counter == 2
+            SendPostRequest(apiUri); //counter == 0
+            SendPostRequest(apiUri); // counter == 1
 
             var body = SendGetRequest(apiUri);
-            Assert.AreEqual(2, int.Parse(body));
+
+            var currentCounter = 1;
+            Assert.AreEqual(currentCounter, int.Parse(body));
         }
 
         [Test]
