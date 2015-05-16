@@ -2,7 +2,7 @@
 
 namespace BuildRevisionCounter.Core.DomainObjects
 {
-	public class User
+	internal class User
 	{
 		[BsonId]
 		public string Name { get; set; }

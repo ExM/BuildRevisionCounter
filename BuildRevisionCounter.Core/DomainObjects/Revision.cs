@@ -3,7 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace BuildRevisionCounter.Core.DomainObjects
 {
-	public class Revision
+	internal class Revision
 	{
 		[BsonId] 
 		public string Id;
