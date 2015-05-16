@@ -39,8 +39,8 @@ namespace BuildRevisionCounter.Core
 			}
 		}
 
-		public readonly MongoCollection<Revision> Revisions;
-		public readonly MongoCollection<User> Users;
+		internal readonly MongoCollection<Revision> Revisions;
+		internal readonly MongoCollection<User> Users;
 
 		private void CreateAdmin()
 		{

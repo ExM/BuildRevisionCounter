@@ -4,7 +4,7 @@ namespace BuildRevisionCounter.Core.Converters
 {
 	public static class RevisionConverter
 	{
-		public static Contract.Revision ToContract(this Revision revision)
+		internal static Contract.Revision ToContract(this Revision revision)
 		{
 			var revisionContract = new Contract.Revision
 			{
