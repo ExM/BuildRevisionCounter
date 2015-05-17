@@ -86,7 +86,7 @@ namespace BuildRevisionCounter.Controllers
 						});
 					return 0;
 				}
-				catch (MongoWriteException e)
+				catch (MongoWriteException)
 				{
 					// если прои вставке произошла ошибка значит мы не успели и запись там уже есть
 					// и теперь попытка обновления должна пройти без ошибок
