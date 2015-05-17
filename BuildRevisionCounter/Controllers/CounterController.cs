@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
 using BuildRevisionCounter.Interfaces;
@@ -36,16 +37,29 @@ namespace BuildRevisionCounter.Controllers
 			if (pageSize < 1 || pageNumber < 1)
 				throw new HttpResponseException(HttpStatusCode.BadRequest);
 
-			var revisions = await _mongoDbStorage.Revisions
+			CancellationTokenSource cts = new CancellationTokenSource();
+			var task = _mongoDbStorage.Revisions
 				.Find(r => true)
 				.Skip(pageSize * (pageNumber - 1))
 				.Limit(pageSize)
-				.ToListAsync();
+				.ToListAsync(cts.Token);
 
-			if (revisions == null)
+			// запустим паралельно 2 таска, второй таск в роли таймаута (30 сек)
+			const int timeout = 30*1000;
+			if (await Task.WhenAny(task, Task.Delay(timeout, cts.Token)) != task)
+			{
+				// посылаем команду прервать поток поиска
+				cts.Cancel();
+				// генерируем сообщение о том что не дождались ответа от монги
+				throw new HttpResponseException(HttpStatusCode.GatewayTimeout);
+			}
+			// прерываем поток таймаута
+			cts.Cancel();
+
+			if (task.Result == null)
 				throw new HttpResponseException(HttpStatusCode.NotFound);
 
-			return revisions;
+			return task.Result;
 		}
 
 		[HttpGet]
