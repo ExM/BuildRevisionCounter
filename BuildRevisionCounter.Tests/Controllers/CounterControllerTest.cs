@@ -1,4 +1,7 @@
-﻿using System.Net;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using System.Web.Http;
 using BuildRevisionCounter.Controllers;
@@ -33,7 +36,7 @@ namespace BuildRevisionCounter.Tests.Controllers
 		{
 			try
 			{
-				var rev = await _controller.Current("CurrentThrowsExceptionIfRevisionNotFound");
+				await _controller.Current("CurrentThrowsExceptionIfRevisionNotFound");
 				Assert.Fail();
 			}
 			catch (HttpResponseException ex)
@@ -43,10 +46,30 @@ namespace BuildRevisionCounter.Tests.Controllers
 		}
 
 		[Test]
-		public async Task BumpingNewRevisionReturnsOne()
+		public async Task BumpingNewRevisionReturnsZero()
 		{
 			var rev = await _controller.Bumping("BumpingNewRevisionReturnsZero");
-			Assert.AreEqual(1, rev);
+			Assert.AreEqual(0, rev);
+		}
+
+		[Test]
+		public async Task BumpingNewRevisionMayBeInvokedMultipleTimes()
+		{
+			string revName = "BumpingNewRevisionMayBeInvokedMultipleTimes" + Guid.NewGuid().ToString();
+
+			// запустим сразу n потоков вставки
+			const int n = 5;
+			List<Task> taskList = new List<Task>();
+			for (int i = 0; i < n; i++)
+			{
+				taskList.Add(Task.Run(async () => await _controller.Bumping(revName)));
+			}
+			// дождемся окончания всех потококв
+			Task.WaitAll(taskList.ToArray());
+
+			// проверим результатнашего каунтера
+			var res = await _controller.Current(revName);
+			Assert.AreEqual(n - 1, res);
 		}
 
 		[Test]
@@ -63,6 +86,77 @@ namespace BuildRevisionCounter.Tests.Controllers
 			var rev1 = await _controller.Bumping("CurrentReturnSameValueAsPreviousBumping");
 			var rev2 = await _controller.Current("CurrentReturnSameValueAsPreviousBumping");
 			Assert.AreEqual(rev1, rev2);
+		}
+
+		[Test]
+		public async Task GetAllRevisionReturnsAllRevision()
+		{
+			const string revName1 = "BumpingIncrementsRevisionNumber1";
+			const string revName2 = "BumpingIncrementsRevisionNumber2";
+			const string revName3 = "BumpingIncrementsRevisionNumber3";
+
+			await _controller.Bumping(revName1);
+			await _controller.Bumping(revName1);
+			await _controller.Bumping(revName2);
+			await _controller.Bumping(revName3);
+
+			var rev1 = await _controller.Current(revName1);
+			var rev2 = await _controller.Current(revName2);
+			var rev3 = await _controller.Current(revName3);
+
+			var result = await _controller.GetAllRevision();
+
+			Assert.IsTrue(result.Any(x => x.Id == revName1 && x.NextNumber == rev1));
+			Assert.IsTrue(result.Any(x => x.Id == revName2 && x.NextNumber == rev2));
+			Assert.IsTrue(result.Any(x => x.Id == revName3 && x.NextNumber == rev3));
+		}
+
+		[Test]
+		public async Task GetAllRevisionReturnsSecondPage()
+		{
+			// пересоздадим БД перед этим тестом,
+			// он должен проводиться на чистой БД
+			SetUpAsync().Wait();
+
+			for (int i = 0; i < 10; i++)
+			{
+				string revName = "GetAllRevisionReturnsSecondPage" + i.ToString();
+				await _controller.Bumping(revName);
+			}
+
+			var result = await _controller.GetAllRevision(3, 2);
+
+			Assert.IsTrue(result.Any(x => x.Id == "GetAllRevisionReturnsSecondPage3"));
+			Assert.IsTrue(result.Any(x => x.Id == "GetAllRevisionReturnsSecondPage4"));
+			Assert.IsTrue(result.Any(x => x.Id == "GetAllRevisionReturnsSecondPage5"));
+		}
+
+		[Test]
+		public async Task GetAllRevisionArgumentExceptionPageSize()
+		{
+			try
+			{
+				await _controller.GetAllRevision(0, 2);
+				Assert.Fail();
+			}
+			catch (HttpResponseException ex)
+			{
+				Assert.AreEqual(HttpStatusCode.BadRequest, ex.Response.StatusCode);
+			}
+		}
+
+		[Test]
+		public async Task GetAllRevisionArgumentExceptionPageNumber()
+		{
+			try
+			{
+				await _controller.GetAllRevision(3, 0);
+				Assert.Fail();
+			}
+			catch (HttpResponseException ex)
+			{
+				Assert.AreEqual(HttpStatusCode.BadRequest, ex.Response.StatusCode);
+			}
 		}
 	}
 }
