@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using BuildRevisionCounter.DAL.Repositories;
 using MongoDB.Driver;
 using NUnit.Framework;
 
@@ -7,70 +8,71 @@ namespace BuildRevisionCounter.Tests
 	[TestFixture]
 	public class MongoDBStorageTest
 	{
-		private MongoDBStorage _storage;
+	    private UserRepository _userRepo;
+	    private RevisionRepository _revisionRepo;
 
-		[TestFixtureSetUp]
+	    [TestFixtureSetUp]
 		public void SetUp()
 		{
 			SetUpAsync().Wait();
 		}
 
-		public async Task SetUpAsync()
-		{
-			_storage = MongoDBStorageFactory.DefaultInstance;
+		private async Task SetUpAsync()
+        {
+            _userRepo = RepositoriesFactory.UserRepoInstance;
+            _revisionRepo = RepositoriesFactory.RevisionRepoInstance;
 
-			await _storage.Revisions.Database.Client.DropDatabaseAsync(
-				_storage.Revisions.Database.DatabaseNamespace.DatabaseName);
-
-			await _storage.SetUp();
-		}
+            await _revisionRepo.DropDatabaseAsync();
+            await _userRepo.CreateOneAsync();
+            await _userRepo.EnsureAdminUser();
+        }
 
 		[Test]
 		public async Task EnsureAdminUserCreated()
 		{
-			var user = await _storage.FindUser(MongoDBStorage.AdminName);
-			Assert.AreEqual(MongoDBStorage.AdminName, user.Name);
+            var user = await _userRepo.FindUser(UserRepository.AdminName);
+            Assert.AreEqual(UserRepository.AdminName, user.Name);
 		}
 
 		[Test]
 		public async Task CreateUser()
 		{
-			await _storage.CreateUser("test", "test", new[] {"testRole"});
+            await _userRepo.CreateUser("test", "test", new[] { "testRole" });
 		}
 
 		[Test]
 		public async Task FindUserReturnsNullIfNoUserFound()
 		{
-			var user = await _storage.FindUser("FindUserReturnsNullIfNoUserFound");
+            var user = await _userRepo.FindUser("FindUserReturnsNullIfNoUserFound");
 			Assert.IsNull(user);
 		}
 
 		[Test]
 		public async Task FindUserReturnsCreatedUser()
 		{
-			await _storage.CreateUser("FindUserReturnsCreatedUser", "FindUserReturnsCreatedUser", new[] {"testRole"});
-			var user = await _storage.FindUser("FindUserReturnsCreatedUser");
+            await _userRepo.CreateUser("FindUserReturnsCreatedUser", "FindUserReturnsCreatedUser", new[] { "testRole" });
+            var user = await _userRepo.FindUser("FindUserReturnsCreatedUser");
 			Assert.AreEqual("FindUserReturnsCreatedUser", user.Name);
 		}
 
 		[Test]
 		public async Task EnsureAdminUserMayBeInvokedMultipleTimes()
 		{
-			await _storage.EnsureAdminUser();
-			await _storage.EnsureAdminUser();
+            await _userRepo.EnsureAdminUser();
+            await _userRepo.EnsureAdminUser();
 		}
 
 		[Test]
 		public async Task CreateUserMustThrowExceptionIfUserExists()
 		{
-			await _storage.CreateUser(
+            await _userRepo.CreateUser(
 				"CreateUserMustThrowExceptionIfUserExists",
 				"CreateUserMustThrowExceptionIfUserExists",
 				new[] {"testRole"});
 
 			try
 			{
-				await _storage.CreateUser(
+                await _userRepo.CreateUser(
 					"CreateUserMustThrowExceptionIfUserExists",
 					"CreateUserMustThrowExceptionIfUserExists",
 					new[] {"testRole"});
