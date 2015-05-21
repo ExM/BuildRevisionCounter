@@ -35,7 +35,6 @@ namespace BuildRevisionCounter.Api.Controllers
             RevisionModel revision = await _revisionRepository.Get(r => r.Id == revisionName);
             if (revision == null)
             {
-                //Response.CreateErrorResponse(ErrorResponceType.NotFound, Request);
                 throw new HttpResponseException(HttpStatusCode.NotFound);
             }
 

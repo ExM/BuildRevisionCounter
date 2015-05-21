@@ -118,7 +118,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <Content Include="connectionStrings.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup />
