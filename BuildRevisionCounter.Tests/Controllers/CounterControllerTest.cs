@@ -14,20 +14,11 @@ namespace BuildRevisionCounter.Tests.Controllers
 		[TestFixtureSetUp]
 		public void SetUp()
 		{
-			SetUpAsync().Wait();
+			MongoDBStorageUtils.SetUpAsync().Wait();
+
+			_controller = new CounterController(MongoDBStorageFactory.DefaultInstance);
 		}
-
-		public async Task SetUpAsync()
-		{
-			var storage = MongoDBStorageFactory.DefaultInstance;
-			await storage.Revisions.Database.Client.DropDatabaseAsync(
-				storage.Revisions.Database.DatabaseNamespace.DatabaseName);
-
-			await storage.SetUp();
-
-			_controller = new CounterController(storage);
-		}
-
+		
 		[Test]
 		public async Task CurrentThrowsExceptionIfRevisionNotFound()
 		{
