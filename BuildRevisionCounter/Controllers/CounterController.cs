@@ -60,7 +60,7 @@ namespace BuildRevisionCounter.Controllers
 			if (revision == null)
 				throw new HttpResponseException(HttpStatusCode.NotFound);
 
-			return revision.NextNumber;
+			return revision.CurrentNumber;
 		}
 
 		[HttpPost]
@@ -71,7 +71,7 @@ namespace BuildRevisionCounter.Controllers
 			// попробуем обновить документ
 			var result = await FindOneAndUpdateRevisionModelAsync(revisionName);
 			if (result != null)
-				return result.NextNumber;
+				return result.CurrentNumber;
 
 			// если не получилось, значит документ еще не был создан
 			// создадим его с начальным значением 0
@@ -81,7 +81,7 @@ namespace BuildRevisionCounter.Controllers
 					.InsertOneAsync(new RevisionModel
 					{
 						Id = revisionName,
-						NextNumber = 0,
+						CurrentNumber = 0,
 						Created = DateTime.UtcNow
 					});
 				return 0;
@@ -96,7 +96,7 @@ namespace BuildRevisionCounter.Controllers
 			// и теперь попытка обновления должна пройти без ошибок
 			result = await FindOneAndUpdateRevisionModelAsync(revisionName);
 
-			return result.NextNumber;
+			return result.CurrentNumber;
 		}
 
 		/// <summary>
@@ -110,7 +110,7 @@ namespace BuildRevisionCounter.Controllers
 				.FindOneAndUpdateAsync<RevisionModel>(
 					r => r.Id == revisionName,
 					Builders<RevisionModel>.Update
-						.Inc(r => r.NextNumber, 1)
+						.Inc(r => r.CurrentNumber, 1)
 						.SetOnInsert(r => r.Created, DateTime.UtcNow)
 						.Set(r => r.Updated, DateTime.UtcNow),
 					new FindOneAndUpdateOptions<RevisionModel>
