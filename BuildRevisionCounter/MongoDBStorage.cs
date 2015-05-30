@@ -18,15 +18,21 @@ namespace BuildRevisionCounter
 		{
 			Revisions = database.GetCollection<RevisionModel>("revisions");
 			Users = database.GetCollection<UserModel>("users");
+
+			Task.Run(() => SetUp()).Wait();
 		}
 
 		public async Task SetUp()
 		{
+			await EnsureUsersIndex();
+			await EnsureAdminUser();
+		}
+
+		public async Task EnsureUsersIndex()
+		{
 			await Users.Indexes.CreateOneAsync(
 				Builders<UserModel>.IndexKeys.Ascending(u => u.Name),
-				new CreateIndexOptions {Unique = true});
-
-			await EnsureAdminUser();
+				new CreateIndexOptions { Unique = true,  });
 		}
 
 		public async Task EnsureAdminUser()
