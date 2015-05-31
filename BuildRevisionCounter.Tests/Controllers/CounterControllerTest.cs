@@ -43,10 +43,10 @@ namespace BuildRevisionCounter.Tests.Controllers
 		}
 
 		[Test]
-		public async Task BumpingNewRevisionReturnsOne()
+		public async Task BumpingNewRevisionReturnsZero()
 		{
 			var rev = await _controller.Bumping("BumpingNewRevisionReturnsZero");
-			Assert.AreEqual(1, rev);
+			Assert.AreEqual(0, rev);
 		}
 
 		[Test]
