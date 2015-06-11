@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildRevisionCounter.Tests"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildRevisionCounter.Model", "BuildRevisionCounter.Model\BuildRevisionCounter.Model.csproj", "{8B009157-4298-4126-A165-3680F7825A6C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildRevisionCounter.DAL", "BuildRevisionCounter.DAL\BuildRevisionCounter.DAL.csproj", "{83B60BB3-424B-4F19-8A46-A7A6FD80DE6D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
