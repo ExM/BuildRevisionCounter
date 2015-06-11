@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
 
-namespace BuildRevisionCounter.Security
+namespace BuildRevisionCounter.Api.Security
 {
 	public class AuthenticationFailureResult : IHttpActionResult
 	{
