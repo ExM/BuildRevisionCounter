@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using System.Web.Http;
 using BuildRevisionCounter.Controllers;
+using BuildRevisionCounter.Core;
 using NUnit.Framework;
 
 namespace BuildRevisionCounter.Tests.Controllers
@@ -10,13 +11,21 @@ namespace BuildRevisionCounter.Tests.Controllers
 	public class CounterControllerTest
 	{
 		private CounterController _controller;
+		private IRepository _repository;
 
 		[TestFixtureSetUp]
 		public void SetUp()
 		{
-			MongoDBStorageUtils.SetUpAsync().Wait();
+			SetUpAsync().Wait();
+		}
 
-			_controller = new CounterController(MongoDBStorageFactory.DefaultInstance);
+		public async Task SetUpAsync()
+		{
+			_repository = RepositoryFactory.Instance.GetRepository();
+			await _repository.DropDatabaseAsync();
+			await _repository.SetUpAsync();
+
+			_controller = new CounterController();
 		}
 		
 		[Test]

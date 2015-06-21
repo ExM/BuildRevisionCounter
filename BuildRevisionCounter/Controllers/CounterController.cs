@@ -1,13 +1,9 @@
-﻿using System.Configuration;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using BuildRevisionCounter.Core.Repositories.Impl;
+﻿using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 using System.Web.Http;
-using BuildRevisionCounter.Interfaces;
-using BuildRevisionCounter.Model;
+using BuildRevisionCounter.Core;
 using BuildRevisionCounter.Security;
-using MongoDB.Driver;
 
 namespace BuildRevisionCounter.Controllers
 {
@@ -15,7 +11,6 @@ namespace BuildRevisionCounter.Controllers
 	[BasicAuthentication]
 	public class CounterController : ApiController
 	{
-
 		[HttpGet]
 		[Route("")]
 		[Authorize(Roles = "admin, editor, anonymous")]
@@ -41,9 +36,8 @@ namespace BuildRevisionCounter.Controllers
 		[Authorize(Roles = "admin, editor, anonymous")]
 		public async Task<long> Current([FromUri] string revisionName)
 		{
-			var revision = await _mongoDbStorage.Revisions
-				.Find(r => r.Id == revisionName)
-				.SingleOrDefaultAsync();
+			var repository = RepositoryFactory.Instance.GetRevisionRepository();
+			var revision = await repository.GetRevisionByIdAsync(revisionName);
 
 			if (revision == null)
 				throw new HttpResponseException(HttpStatusCode.NotFound);
@@ -54,7 +48,7 @@ namespace BuildRevisionCounter.Controllers
 		[HttpPost]
 		[Route("{revisionName}")]
 		[Authorize(Roles = "buildserver")]
-		public long Bumping([FromUri] string revisionName)
+		public async Task<long> Bumping([FromUri] string revisionName)
 		{
 			// попробуем обновить документ
 			var result = await FindOneAndUpdateRevisionModelAsync(revisionName);

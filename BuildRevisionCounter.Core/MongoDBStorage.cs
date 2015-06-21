@@ -1,24 +1,39 @@
 ﻿using System;
 using System.Configuration;
-using System.Linq;
+using System.Threading.Tasks;
 using BuildRevisionCounter.Core.DomainObjects;
 using MongoDB.Driver;
-using MongoDB.Driver.Linq;
 
 namespace BuildRevisionCounter.Core
 {
-	public class MongoContext
+	public class MongoContext : IRepository
 	{
+		public static readonly string AdminName = "admin";
+		public static readonly string AdminPassword = "admin";
+		public static readonly string[] AdminRoles = { "admin", "buildserver", "editor" };
+
 		private static readonly Object SLock = new Object();
 		private static volatile MongoContext _instance = null;
+		
+		private readonly IMongoClient _client;
+		internal IMongoClient Client
+		{
+			get { return _client; }
+		}
+
+		private readonly IMongoDatabase _database;
+		internal IMongoDatabase Database
+		{
+			get { return _database; }
+		}
 
 		private MongoContext()
 		{
-			var connectionString = ConfigurationManager.ConnectionStrings["MongoDBStorage"].ConnectionString;
-			var database = MongoDatabase.Create(connectionString);
+			string connectionString = ConfigurationManager.ConnectionStrings["MongoDBStorage"].ConnectionString;
+			var url = new MongoUrl(connectionString);
 
-			Revisions = database.GetCollection<Revision>("revisions");
-			Users = database.GetCollection<User>("users");
+			_client = new MongoClient(url);
+			_database = _client.GetDatabase(url.DatabaseName);
 
 			CreateAdmin();
 		}
@@ -39,14 +54,53 @@ namespace BuildRevisionCounter.Core
 			}
 		}
 
-		internal readonly MongoCollection<Revision> Revisions;
-		internal readonly MongoCollection<User> Users;
+		public async Task SetUpAsync()
+		{
+			await Users.Indexes.CreateOneAsync(
+				Builders<User>.IndexKeys.Ascending(u => u.Name),
+				new CreateIndexOptions { Unique = true });
 
+			await EnsureAdminUser();
+		}
+
+		public async Task DropDatabaseAsync()
+		{
+			await Client.DropDatabaseAsync(Database.DatabaseNamespace.DatabaseName);
+		}
+
+		public async Task EnsureAdminUser()
+		{
+			var repository = RepositoryFactory.Instance.GetUserRepository();
+
+			if (await repository.CountAsync() == 0)
+			{
+				await repository.CreateUserAsync(new Protocol.User
+				{
+					Name = AdminName,
+					Password = AdminPassword,
+					Roles = AdminRoles
+				});
+			}
+		}
+
+		internal IMongoCollection<Revision> Revisions
+		{
+			get { return _database.GetCollection<Revision>("revisions"); }
+		}
+
+		internal IMongoCollection<User> Users
+		{
+			get { return _database.GetCollection<User>("users"); }
+		}
+		
 		private void CreateAdmin()
 		{
-			if (!Users.AsQueryable().Any())
+			var anyUser = Users.Find(l => true).FirstOrDefaultAsync();
+			anyUser.Wait();
+
+			if (anyUser.Result == null)
 			{
-				Users.Insert(new User
+				Users.InsertOneAsync(new User
 				{
 					Name = "admin",
 					Password = "admin",
@@ -54,5 +108,12 @@ namespace BuildRevisionCounter.Core
 				});
 			}
 		}
+	}
+
+	public interface IRepository
+	{
+		Task SetUpAsync();
+
+		Task DropDatabaseAsync();
 	}
 }
