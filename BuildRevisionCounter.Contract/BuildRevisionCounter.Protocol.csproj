@@ -7,8 +7,8 @@
     <ProjectGuid>{667844E5-6D11-474D-A18F-BC4784626F34}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>BuildRevisionCounter.Contract</RootNamespace>
-    <AssemblyName>BuildRevisionCounter.Contract</AssemblyName>
+    <RootNamespace>BuildRevisionCounter.Protocol</RootNamespace>
+    <AssemblyName>BuildRevisionCounter.Protocol</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

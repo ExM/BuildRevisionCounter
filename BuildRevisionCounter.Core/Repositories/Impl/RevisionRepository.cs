@@ -1,18 +1,21 @@
 ﻿using System;
+using System.Threading.Tasks;
 using BuildRevisionCounter.Core.Converters;
 using BuildRevisionCounter.Core.DomainObjects;
 using MongoDB.Driver;
-using MongoDB.Driver.Builders;
+
 
 namespace BuildRevisionCounter.Core.Repositories.Impl
 {
 	internal class RevisionRepository : IRevisionRepository
 	{
 		private readonly MongoContext _storage;
+		private readonly IRevisionConverter _revisionConverter;
 
-		public RevisionRepository()
+		public RevisionRepository(IRevisionConverter revisionConverter)
 		{
 			_storage = MongoContext.Instance;
+			_revisionConverter = revisionConverter;
 		}
 
 		private void CheckRevisionId(string revisionId)
@@ -20,35 +23,71 @@ namespace BuildRevisionCounter.Core.Repositories.Impl
 			if (String.IsNullOrEmpty(revisionId)) throw new ArgumentException("revisionId can't be null or empty", "revisionId");
 		}
 
-		public Contract.Revision GetRevisionById(string revisionId)
+		#region IRevisionRepository
+
+		public async Task<Protocol.Revision> GetRevisionByIdAsync(string revisionId)
+		{
+			var domainRevision = await GetDomainRevisionByIdAsync(revisionId);
+			if (domainRevision == null) return null;
+			return _revisionConverter.ToProtocol(domainRevision);
+		}
+
+		public async Task<Protocol.Revision> IncrementRevisionAsync(string revisionId)
+		{
+			var domainRevision = await IncrementDomainRevisionAsync(revisionId);
+
+			return _revisionConverter.ToProtocol(domainRevision);
+		}
+
+		public async Task AddRevisionAsync(Protocol.Revision revision)
+		{
+			var domainRevision = _revisionConverter.ToDomain(revision);
+			await AddDomainRevisionAsync(domainRevision);
+		}
+
+		public async Task ClearRevisionCollectionAsync()
+		{
+			await _storage.Revisions.DeleteManyAsync(l => true);
+		}
+
+		#endregion
+
+		internal async Task<Revision> GetDomainRevisionByIdAsync(string revisionId)
 		{
 			CheckRevisionId(revisionId);
 
-			var q = Query<Revision>.Where(_ => _.Id == revisionId);
-			var revision = _storage.Revisions.FindOne(q);
-
-			if (revision == null) return null;
-			return revision.ToContract();
+			var revision = await _storage.Revisions
+				.Find(_ => _.Id == revisionId)
+				.SingleOrDefaultAsync();
+			
+			return revision;
 		}
 
-		public Contract.Revision IncrementRevision(string revisionId)
+		internal async Task<Revision> IncrementDomainRevisionAsync(string revisionId)
 		{
 			CheckRevisionId(revisionId);
 
-			var result = _storage.Revisions.FindAndModify(new FindAndModifyArgs()
-			{
-				Query = Query<Revision>.Where(_ => _.Id == revisionId),
-				Upsert = true,
-				Update = Update<Revision>
-					.SetOnInsert(_ => _.Created, DateTime.UtcNow)
-					.Inc(_ => _.NextNumber, 1)
-					.Set(_ => _.Updated, DateTime.UtcNow),
-				VersionReturned = FindAndModifyDocumentVersion.Modified
-			});
+			var result = await _storage.Revisions
+				.FindOneAndUpdateAsync<Revision>(
+					r => r.Id == revisionId,
+					Builders<Revision>.Update
+						.Inc(r => r.NextNumber, 1)
+						.SetOnInsert(r => r.Created, DateTime.UtcNow)
+						.Set(r => r.Updated, DateTime.UtcNow),
+					new FindOneAndUpdateOptions<Revision>
+					{
+						IsUpsert = true,
+						ReturnDocument = ReturnDocument.After
+					});
 
-			var revision = result.GetModifiedDocumentAs<Revision>();
-
-			return revision.ToContract();
+			return result;
 		}
+
+		internal async Task AddDomainRevisionAsync(Revision revision)
+		{
+			await _storage.Revisions.InsertOneAsync(revision);
+		}
+
+		
 	}
 }

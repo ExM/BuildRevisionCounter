@@ -116,9 +116,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Web.config">
-      <SubType>Designer</SubType>
-    </Content>
+    <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Controllers\CounterController.cs" />
@@ -136,9 +134,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BuildRevisionCounter.Contract\BuildRevisionCounter.Contract.csproj">
+    <ProjectReference Include="..\BuildRevisionCounter.Contract\BuildRevisionCounter.Protocol.csproj">
       <Project>{667844e5-6d11-474d-a18f-bc4784626f34}</Project>
-      <Name>BuildRevisionCounter.Contract</Name>
+      <Name>BuildRevisionCounter.Protocol</Name>
     </ProjectReference>
     <ProjectReference Include="..\BuildRevisionCounter.Core\BuildRevisionCounter.Core.csproj">
       <Project>{ddf51396-4ee1-45af-b134-ca1c56b0cd9f}</Project>
@@ -174,7 +172,7 @@
     </VisualStudio>
   </ProjectExtensions>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-    Other similar extension points exist, see Microsoft.Common.targets.
+       Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>
   <Target Name="AfterBuild">

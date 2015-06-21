@@ -72,14 +72,22 @@
   </Choose>
   <ItemGroup>
     <Compile Include="Controllers\CounterControllerTest.cs" />
-    <Compile Include="MongoDBStorageFactory.cs" />
     <Compile Include="MongoDBStorageTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Repositories\RevisionRepositoryTest.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BuildRevisionCounter\BuildRevisionCounter.csproj">
+    <ProjectReference Include="..\BuildRevisionCounter.Contract\BuildRevisionCounter.Protocol.csproj">
+      <Project>{667844e5-6d11-474d-a18f-bc4784626f34}</Project>
+      <Name>BuildRevisionCounter.Protocol</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BuildRevisionCounter.Core\BuildRevisionCounter.Core.csproj">
+      <Project>{ddf51396-4ee1-45af-b134-ca1c56b0cd9f}</Project>
+      <Name>BuildRevisionCounter.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BuildRevisionCounter\BuildRevisionCounter.WebApi.csproj">
       <Project>{64eeea30-fce1-4aa6-a375-ebd721914708}</Project>
-      <Name>BuildRevisionCounter</Name>
+      <Name>BuildRevisionCounter.WebApi</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
