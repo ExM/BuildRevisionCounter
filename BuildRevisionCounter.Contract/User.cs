@@ -1,4 +1,4 @@
-﻿namespace BuildRevisionCounter.Contract
+﻿namespace BuildRevisionCounter.Protocol
 {
 	public class User
 	{

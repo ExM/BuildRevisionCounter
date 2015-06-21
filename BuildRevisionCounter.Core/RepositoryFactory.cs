@@ -1,4 +1,5 @@
 ﻿using System;
+using BuildRevisionCounter.Core.Converters.Impl;
 using BuildRevisionCounter.Core.Repositories;
 using BuildRevisionCounter.Core.Repositories.Impl;
 
@@ -30,12 +31,17 @@ namespace BuildRevisionCounter.Core
 
 		public IRevisionRepository GetRevisionRepository()
 		{
-			return new RevisionRepository();
+			return new RevisionRepository(new RevisionConverter());
 		}
 
 		public IUserRepository GetUserRepository()
 		{
-			return new UserRepository();
+			return new UserRepository(new UserConverter());
+		}
+
+		public IRepository GetRepository()
+		{
+			return MongoContext.Instance;
 		}
 	}
 }
