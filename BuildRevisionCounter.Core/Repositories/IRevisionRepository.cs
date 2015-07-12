@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace BuildRevisionCounter.Core.Repositories
 {
@@ -11,5 +13,7 @@ namespace BuildRevisionCounter.Core.Repositories
 		Task AddRevisionAsync(Protocol.Revision revision);
 
 		Task ClearRevisionCollectionAsync();
+
+		Task<List<Protocol.Revision>> GetAllRevisionAsync(Int32 pageSize = 20, Int32 pageNumber = 1);
 	}
 }

@@ -45,13 +45,13 @@ namespace BuildRevisionCounter.Tests.Repositories
 		}
 
 		[Test]
-		public async Task IncrementDomainRevisionAsync_WhenNotExist_CreateWithNumberOne()
+		public async Task IncrementDomainRevisionAsync_WhenNotExist_CreateWithNumberZero()
 		{
-			const int expectedNextNumber = 1;
+			const int expectedNextNumber = 0;
 			const string revId = "testRev";
 
 			var newRevision = await _repository.IncrementDomainRevisionAsync(revId);
-			var actualNextNumber = newRevision.NextNumber;
+			var actualNextNumber = newRevision.CurrentNumber;
 
 			Assert.AreEqual(expectedNextNumber, actualNextNumber);
 		}
@@ -61,11 +61,11 @@ namespace BuildRevisionCounter.Tests.Repositories
 		{
 			const string revId = "testRev";
 			const int expectedNextNumber = 4;
-			var expectedRev = new Revision {Id = revId, NextNumber = expectedNextNumber - 1};
+			var expectedRev = new Revision {Id = revId, CurrentNumber = expectedNextNumber - 1};
 			await _repository.AddDomainRevisionAsync(expectedRev);
 
 			var actualRev = await _repository.IncrementDomainRevisionAsync(revId);
-			var actualNextNumber = actualRev.NextNumber;
+			var actualNextNumber = actualRev.CurrentNumber;
 
 			Assert.AreEqual(expectedNextNumber, actualNextNumber);
 		}

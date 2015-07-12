@@ -9,7 +9,7 @@ namespace BuildRevisionCounter.Core.Converters.Impl
 			var revisionProtocol = new Protocol.Revision
 			{
 				Id = revision.Id,
-				NextNumber = revision.NextNumber,
+				CurrentNumber = revision.CurrentNumber,
 				Updated = revision.Updated,
 				Created = revision.Created
 			};
@@ -22,7 +22,7 @@ namespace BuildRevisionCounter.Core.Converters.Impl
 			var revisionDomain = new Revision
 			{
 				Id = revision.Id,
-				NextNumber = revision.NextNumber,
+				CurrentNumber = revision.CurrentNumber,
 				Updated = revision.Updated,
 				Created = revision.Created
 			};

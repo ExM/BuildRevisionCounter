@@ -10,6 +10,6 @@ namespace BuildRevisionCounter.Protocol
 
 		public DateTime Updated { get; set; }
 
-		public long NextNumber { get; set; }
+		public long CurrentNumber { get; set; }
 	}
 }
