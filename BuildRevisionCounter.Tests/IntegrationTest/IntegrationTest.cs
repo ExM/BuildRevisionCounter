@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using BuildRevisionCounter.Core;
 using Microsoft.Owin.Hosting;
 using NUnit.Framework;
 
@@ -27,7 +28,15 @@ namespace BuildRevisionCounter.Tests
 			_uri = string.Format("http://localhost:{0}", port);
 			_application = WebApp.Start<Startup>(_uri);
 
-			MongoDBStorageUtils.SetUpAsync().Wait();
+			SetUpAsync().Wait();
+		}
+
+		public async Task SetUpAsync()
+		{
+			await MongoContext.Instance.Client.DropDatabaseAsync(
+				MongoContext.Instance.Database.DatabaseNamespace.DatabaseName);
+
+			await MongoContext.Instance.SetUpAsync();
 		}
 
 
