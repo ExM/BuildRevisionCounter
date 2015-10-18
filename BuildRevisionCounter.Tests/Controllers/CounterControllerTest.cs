@@ -14,9 +14,9 @@ namespace BuildRevisionCounter.Tests.Controllers
 		[TestFixtureSetUp]
 		public void SetUp()
 		{
-			MongoDBStorageUtils.SetUpAsync().Wait();
-
-			_controller = new CounterController(MongoDBStorageFactory.DefaultInstance);
+            DBStorageFactory.DefaultInstance.SetUpAsync().Wait();
+			
+			_controller = new CounterController(DBStorageFactory.DefaultInstance);
 		}
 		
 		[Test]

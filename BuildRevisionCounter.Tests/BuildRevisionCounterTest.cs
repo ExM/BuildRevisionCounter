@@ -11,7 +11,7 @@ namespace BuildRevisionCounter.Tests
 		[Test]
 		public async Task GetAllRevisions()
 		{
-			var apiUri = "api/counter";
+			const string apiUri = "api/counter";
 
 			var body = await SendGetRequest(apiUri);
 			dynamic result = JArray.Parse(body);

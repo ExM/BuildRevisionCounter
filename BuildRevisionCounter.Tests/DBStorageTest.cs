@@ -1,13 +1,13 @@
 ﻿using System.Threading.Tasks;
-using MongoDB.Driver;
+using BuildRevisionCounter.Data;
 using NUnit.Framework;
 
 namespace BuildRevisionCounter.Tests
 {
 	[TestFixture]
-	public class MongoDBStorageTest
+	public class DBStorageTest
 	{
-		private MongoDBStorage _storage;
+		private DbStorage _storage;
 
 		[TestFixtureSetUp]
 		public void SetUp()
@@ -17,19 +17,17 @@ namespace BuildRevisionCounter.Tests
 
 		public async Task SetUpAsync()
 		{
-			_storage = MongoDBStorageFactory.DefaultInstance;
-
-			await _storage.Revisions.Database.Client.DropDatabaseAsync(
-				_storage.Revisions.Database.DatabaseNamespace.DatabaseName);
-
-			await _storage.SetUp();
+			_storage = DBStorageFactory.DefaultInstance;
+		    await _storage.SetUpAsync();
 		}
 
 		[Test]
 		public async Task EnsureAdminUserCreated()
 		{
-			var user = await _storage.FindUser(MongoDBStorage.AdminName);
-			Assert.AreEqual(MongoDBStorage.AdminName, user.Name);
+		    var adminName = _storage.GetAdminName();
+            var user = await _storage.FindUser(adminName);
+            Assert.IsNotNull(user);
+            Assert.AreEqual(adminName, user.Name);
 		}
 
 		[Test]
@@ -63,22 +61,17 @@ namespace BuildRevisionCounter.Tests
 		[Test]
 		public async Task CreateUserMustThrowExceptionIfUserExists()
 		{
-			await _storage.CreateUser(
-				"CreateUserMustThrowExceptionIfUserExists",
-				"CreateUserMustThrowExceptionIfUserExists",
-				new[] {"testRole"});
-
+            const string userName = "CreateUserMustThrowExceptionIfUserExists";
+            const string userPass = "CreateUserMustThrowExceptionIfUserExists";
+            var userRole = new[] {"testRole"};
+		    await _storage.CreateUser(userName, userPass, userRole);
 			try
 			{
-				await _storage.CreateUser(
-					"CreateUserMustThrowExceptionIfUserExists",
-					"CreateUserMustThrowExceptionIfUserExists",
-					new[] {"testRole"});
+                await _storage.CreateUser(userName, userPass, userRole);
 				Assert.Fail();
 			}
-			catch (MongoWriteException ex)
+            catch (DuplicateKeyException)
 			{
-				Assert.AreEqual(ServerErrorCategory.DuplicateKey, ex.WriteError.Category);
 			}
 		}
 	}

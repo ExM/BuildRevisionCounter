@@ -27,7 +27,7 @@ namespace BuildRevisionCounter.Tests
 			_uri = string.Format("http://localhost:{0}", port);
 			_application = WebApp.Start<Startup>(_uri);
 
-			MongoDBStorageUtils.SetUpAsync().Wait();
+            DBStorageFactory.DefaultInstance.SetUpAsync().Wait();
 		}
 
 
