@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using System.Web.Http;
+using BuildRevisionCounter.Interfaces;
 using BuildRevisionCounter.Model;
 using BuildRevisionCounter.Security;
 using BuildRevisionCounter.Data;
@@ -13,18 +14,18 @@ namespace BuildRevisionCounter.Controllers
 	[BasicAuthentication]
 	public class CounterController : ApiController
 	{
-		private readonly DbStorage _dbStorage;
+		private readonly IDataProvider _dataProvider;
 
 		/// <summary>
 		/// Конструктор контроллера номеров ревизий.
 		/// </summary>
-        /// <param name="dbStorage">Объект для получения данных из БД.</param>
-		public CounterController(DbStorage dbStorage)
+		/// <param name="dataProvider">Объект для получения данных из БД.</param>
+		public CounterController(IDataProvider dataProvider)
 		{
-            if (dbStorage == null)
-                throw new ArgumentNullException("dbStorage");
+			if (dataProvider == null)
+				throw new ArgumentNullException("dataProvider");
 
-            _dbStorage = dbStorage;
+			_dataProvider = dataProvider;
 		}
 
 		[HttpGet]
@@ -35,7 +36,7 @@ namespace BuildRevisionCounter.Controllers
 			if (pageSize < 1 || pageNumber < 1)
 				throw new HttpResponseException(HttpStatusCode.BadRequest);
 
-            var revisions = await _dbStorage.GetAllRevision(pageSize, pageNumber);
+			var revisions = await _dataProvider.GetAllRevision(pageSize, pageNumber);
 
 			if (revisions == null)
 				throw new HttpResponseException(HttpStatusCode.NotFound);
@@ -48,12 +49,12 @@ namespace BuildRevisionCounter.Controllers
 		[Authorize(Roles = "admin, editor, anonymous")]
 		public async Task<long> Current([FromUri] string revisionName)
 		{
-            var revisionNumber = await _dbStorage.CurrentRevision(revisionName);
+			var revisionNumber = await _dataProvider.CurrentRevision(revisionName);
 
-            if (revisionNumber == null)
+			if (revisionNumber == null)
 				throw new HttpResponseException(HttpStatusCode.NotFound);
 
-            return revisionNumber.Value;
+			return revisionNumber.Value;
 		}
 
 		[HttpPost]
@@ -61,7 +62,7 @@ namespace BuildRevisionCounter.Controllers
 		[Authorize(Roles = "buildserver")]
 		public async Task<long> Bumping([FromUri] string revisionName)
 		{
-			return await _dbStorage.Bumping(revisionName);
+			return await _dataProvider.Bumping(revisionName);
 		}
 	}
 }

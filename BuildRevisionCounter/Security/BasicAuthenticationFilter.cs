@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http.Filters;
-using BuildRevisionCounter.Data;
+using BuildRevisionCounter.Interfaces;
 
 namespace BuildRevisionCounter.Security
 {
@@ -27,18 +27,18 @@ namespace BuildRevisionCounter.Security
 				EncoderFallback.ExceptionFallback,
 				DecoderFallback.ExceptionFallback);
 
-		private readonly DbStorage _dbStorage;
+		private readonly IDataProvider _dataProvider;
 
 		/// <summary>
 		/// Конструктор фильтра.
 		/// </summary>
-		/// <param name="dbStorage">Объект для получения данных из БД.</param>
-		public BasicAuthenticationFilter(DbStorage dbStorage)
+		/// <param name="dataProvider">Объект для получения данных из БД.</param>
+		public BasicAuthenticationFilter(IDataProvider dataProvider)
 		{
-            if (dbStorage == null)
-                throw new ArgumentNullException("dbStorage");
+			if (dataProvider == null)
+				throw new ArgumentNullException("dataProvider");
 
-            _dbStorage = dbStorage;
+			_dataProvider = dataProvider;
 		}
 
 		public string Realm { get; set; }
@@ -87,7 +87,7 @@ namespace BuildRevisionCounter.Security
 		private async Task<IPrincipal> Authenticate(string userName, string password)
 		{
 			IPrincipal principal = null;
-			var user = await _dbStorage.FindUser(userName);
+			var user = await _dataProvider.FindUser(userName);
 			if (user != null && user.Password == password)
 			{
 				principal = new GenericPrincipal(new GenericIdentity(userName), user.Roles);

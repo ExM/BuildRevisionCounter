@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using BuildRevisionCounter.Model;
-using MongoDB.Driver;
 
 namespace BuildRevisionCounter.Interfaces
 {
@@ -11,26 +10,14 @@ namespace BuildRevisionCounter.Interfaces
 	/// </summary>
 	public interface IDataProvider
 	{
-	    string AdminName { get; }
+		Task<IReadOnlyCollection<RevisionModel>> GetAllRevision(Int32 pageSize, Int32 pageNumber);
 
-	    Task<IReadOnlyCollection<RevisionModel>> GetAllRevision(Int32 pageSize, Int32 pageNumber);
+		Task<long?> CurrentRevision(string revisionName);
 
-	    Task<long?> CurrentRevision(string revisionName);
+		Task RevisionInsertAsync(string revisionName);
 
-	    Task RevisionInsertAsync(string revisionName);
+		Task<RevisionModel> FindOneAndUpdateRevisionModelAsync(string revisionName);
 
-	    Task<RevisionModel> FindOneAndUpdateRevisionModelAsync(string revisionName);
-
-	    Task SetUp();
-
-	    Task DropDatabaseAsync();
-
-	    Task<UserModel> FindUser(string name);
-
-
-
-	    Task CreateUser(string name, string password, string[] roles);
-
-	    Task EnsureAdminUser();
-    }
+		Task<UserModel> FindUser(string name);
+	}
 }

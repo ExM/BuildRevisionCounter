@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using BuildRevisionCounter.Data;
 using Microsoft.Owin.Hosting;
 using NUnit.Framework;
 
@@ -27,7 +28,8 @@ namespace BuildRevisionCounter.Tests
 			_uri = string.Format("http://localhost:{0}", port);
 			_application = WebApp.Start<Startup>(_uri);
 
-            DBStorageFactory.DefaultInstance.SetUpAsync().Wait();
+
+			DBStorageFactory.DefaultInstance.SetUpAsync().Wait();
 		}
 
 
@@ -72,9 +74,9 @@ namespace BuildRevisionCounter.Tests
 								string.Format("{0}:{1}", userName, password))));
 
 				var content = new FormUrlEncodedContent(new[]
-                {
-                    new KeyValuePair<string, string>("", "")
-                });
+				{
+					new KeyValuePair<string, string>("", "")
+				});
 
 				var responseMessage = await HttpClient.PostAsync(apiUri, content);
 				return await responseMessage.Content.ReadAsStringAsync();

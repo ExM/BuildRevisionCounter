@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using System.Web.Http;
 using BuildRevisionCounter.Controllers;
+using BuildRevisionCounter.Data;
 using NUnit.Framework;
 
 namespace BuildRevisionCounter.Tests.Controllers
@@ -14,9 +15,9 @@ namespace BuildRevisionCounter.Tests.Controllers
 		[TestFixtureSetUp]
 		public void SetUp()
 		{
-            DBStorageFactory.DefaultInstance.SetUpAsync().Wait();
+			DBStorageFactory.DefaultInstance.SetUpAsync().Wait();
 			
-			_controller = new CounterController(DBStorageFactory.DefaultInstance);
+			_controller = new CounterController(DbProviderUtil.GetDataProvider());
 		}
 		
 		[Test]

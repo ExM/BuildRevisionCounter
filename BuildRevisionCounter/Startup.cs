@@ -1,5 +1,6 @@
 ﻿using System.Web.Http.Filters;
 using BuildRevisionCounter.Data;
+using BuildRevisionCounter.Interfaces;
 using BuildRevisionCounter.Security;
 using Microsoft.Owin;
 using Ninject;
@@ -56,7 +57,7 @@ namespace BuildRevisionCounter
 		/// <param name="kernel">Ядро Ninject.</param>
 		private static void RegisterServices(IKernel kernel)
 		{
-            kernel.Bind<DbStorage>().ToMethod(c => new DbStorage()).InSingletonScope();
+			kernel.Bind<IDataProvider>().ToMethod(c => DbProviderUtil.GetDataProvider()).InSingletonScope();
 			kernel.BindHttpFilter<BasicAuthenticationFilter>(FilterScope.Controller).WhenControllerHas<BasicAuthenticationAttribute>();
 		}
 	}

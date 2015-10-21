@@ -2,8 +2,8 @@
 
 namespace BuildRevisionCounter.Data
 {
-    [Serializable]
-    public class DuplicateKeyException : InvalidOperationException
-    {
-    }
+	[Serializable]
+	public class DuplicateKeyException : InvalidOperationException
+	{
+	}
 }

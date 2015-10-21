@@ -11,7 +11,4 @@ TestResults
 TestResult.xml
 /packages/
 /publish/
-*.bin
-*.dat
-*.sst
-*.version
+_ReSharper*

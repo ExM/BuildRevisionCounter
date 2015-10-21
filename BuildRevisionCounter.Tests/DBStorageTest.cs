@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using BuildRevisionCounter.Data;
+using BuildRevisionCounter.Interfaces;
 using NUnit.Framework;
 
 namespace BuildRevisionCounter.Tests
@@ -7,7 +8,7 @@ namespace BuildRevisionCounter.Tests
 	[TestFixture]
 	public class DBStorageTest
 	{
-		private DbStorage _storage;
+		private IDatabaseTestProvider _storage;
 
 		[TestFixtureSetUp]
 		public void SetUp()
@@ -17,17 +18,17 @@ namespace BuildRevisionCounter.Tests
 
 		public async Task SetUpAsync()
 		{
-			_storage = DBStorageFactory.DefaultInstance;
-		    await _storage.SetUpAsync();
+			_storage = DBStorageFactory.GetInstance<MongoDBStorage>();
+			await _storage.SetUpAsync();
 		}
 
 		[Test]
 		public async Task EnsureAdminUserCreated()
 		{
-		    var adminName = _storage.GetAdminName();
-            var user = await _storage.FindUser(adminName);
-            Assert.IsNotNull(user);
-            Assert.AreEqual(adminName, user.Name);
+			var adminName = _storage.AdminName;
+			var user = await _storage.FindUser(adminName);
+			Assert.IsNotNull(user);
+			Assert.AreEqual(adminName, user.Name);
 		}
 
 		[Test]
@@ -61,16 +62,16 @@ namespace BuildRevisionCounter.Tests
 		[Test]
 		public async Task CreateUserMustThrowExceptionIfUserExists()
 		{
-            const string userName = "CreateUserMustThrowExceptionIfUserExists";
-            const string userPass = "CreateUserMustThrowExceptionIfUserExists";
-            var userRole = new[] {"testRole"};
-		    await _storage.CreateUser(userName, userPass, userRole);
+			const string userName = "CreateUserMustThrowExceptionIfUserExists";
+			const string userPass = "CreateUserMustThrowExceptionIfUserExists";
+			var userRole = new[] {"testRole"};
+			await _storage.CreateUser(userName, userPass, userRole);
 			try
 			{
-                await _storage.CreateUser(userName, userPass, userRole);
+				await _storage.CreateUser(userName, userPass, userRole);
 				Assert.Fail();
 			}
-            catch (DuplicateKeyException)
+			catch (DuplicateKeyException)
 			{
 			}
 		}

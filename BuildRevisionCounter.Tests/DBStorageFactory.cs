@@ -1,23 +1,42 @@
 ﻿using System;
+using System.Configuration;
 using BuildRevisionCounter.Data;
+using BuildRevisionCounter.Interfaces;
 
 namespace BuildRevisionCounter.Tests
 {
 	public static class DBStorageFactory
 	{
-		private static readonly Lazy<DbStorage> _defaultInstance =
-            new Lazy<DbStorage>(() => FromConfigurationConnectionString());
+		private static readonly Lazy<IDatabaseTestProvider> _defaultInstance =
+			new Lazy<IDatabaseTestProvider>(() => FromConfigurationConnectionString());
 
-        public static DbStorage DefaultInstance { get { return _defaultInstance.Value; } }
+		public static IDatabaseTestProvider DefaultInstance { get { return _defaultInstance.Value; } }
 
-        public static DbStorage FromConnectionString(string connectionStringName)
+
+		public static IDatabaseTestProvider GetInstance<T>(string connectionStringName = "MongoDBStorage") where T : IDatabaseTestProvider
 		{
-            return new DbStorage(connectionStringName);
+			return GetDatabaseTestProvider<T>(connectionStringName);
 		}
 
-        public static DbStorage FromConfigurationConnectionString(string connectionStringName = "MongoDBStorage")
+		public static IDatabaseTestProvider FromConfigurationConnectionString(string connectionStringName = "MongoDBStorage")
         {
-            return FromConnectionString(connectionStringName);
+			return GetDatabaseTestProvider(connectionStringName);
+		}
+
+		private static IDatabaseTestProvider GetDatabaseTestProvider(string connectionStringName)
+		{
+			const string typeName = "BuildRevisionCounter.Data.MongoDBStorage,BuildRevisionCounter";
+			var type = Type.GetType(typeName);
+			if (type == null)
+				throw new ApplicationException("на найден класс для IDataProvider");
+			var connectionString = ConfigurationManager.ConnectionStrings[connectionStringName].ConnectionString;
+			return (IDatabaseTestProvider)Activator.CreateInstance(type, connectionString);
+		}
+
+		private static IDatabaseTestProvider GetDatabaseTestProvider<T>(string connectionStringName) where T : IDatabaseTestProvider
+		{
+			var connectionString = ConfigurationManager.ConnectionStrings[connectionStringName].ConnectionString;
+			return (IDatabaseTestProvider)Activator.CreateInstance(typeof(T), connectionString);
 		}
 	}
 }

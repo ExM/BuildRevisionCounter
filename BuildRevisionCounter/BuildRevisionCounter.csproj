@@ -124,8 +124,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Controllers\CounterController.cs" />
-    <Compile Include="Data\DbStorage.cs" />
+    <Compile Include="Data\DbProviderUtil.cs" />
     <Compile Include="Data\DuplicateKeyException.cs" />
+    <Compile Include="Interfaces\IDatabaseTestProvider.cs" />
     <Compile Include="Interfaces\IDataProvider.cs" />
     <Compile Include="Model\RevisionModel.cs" />
     <Compile Include="Model\UserModel.cs" />
