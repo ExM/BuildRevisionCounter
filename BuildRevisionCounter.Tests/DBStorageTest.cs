@@ -25,7 +25,7 @@ namespace BuildRevisionCounter.Tests
 		[Test]
 		public async Task EnsureAdminUserCreated()
 		{
-			var adminName = _storage.AdminName;
+			var adminName = _storage.GetAdminName();
 			var user = await _storage.FindUser(adminName);
 			Assert.IsNotNull(user);
 			Assert.AreEqual(adminName, user.Name);

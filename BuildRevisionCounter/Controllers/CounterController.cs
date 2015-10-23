@@ -14,13 +14,13 @@ namespace BuildRevisionCounter.Controllers
 	[BasicAuthentication]
 	public class CounterController : ApiController
 	{
-		private readonly IDataProvider _dataProvider;
+		private readonly IRevisionDataProvider _dataProvider;
 
 		/// <summary>
 		/// Конструктор контроллера номеров ревизий.
 		/// </summary>
 		/// <param name="dataProvider">Объект для получения данных из БД.</param>
-		public CounterController(IDataProvider dataProvider)
+		public CounterController(IRevisionDataProvider dataProvider)
 		{
 			if (dataProvider == null)
 				throw new ArgumentNullException("dataProvider");

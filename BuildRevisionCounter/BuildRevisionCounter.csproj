@@ -127,7 +127,8 @@
     <Compile Include="Data\DbProviderUtil.cs" />
     <Compile Include="Data\DuplicateKeyException.cs" />
     <Compile Include="Interfaces\IDatabaseTestProvider.cs" />
-    <Compile Include="Interfaces\IDataProvider.cs" />
+    <Compile Include="Interfaces\IRevisionDataProvider.cs" />
+    <Compile Include="Interfaces\IUserDataProvider.cs" />
     <Compile Include="Model\RevisionModel.cs" />
     <Compile Include="Model\UserModel.cs" />
     <Compile Include="Data\MongoDBStorage.cs" />
@@ -136,6 +137,7 @@
     <Compile Include="Security\AuthenticationFailureResult.cs" />
     <Compile Include="Security\BasicAuthenticationFilter.cs" />
     <Compile Include="Security\BasicAuthenticationAttribute.cs" />
+    <Compile Include="Security\MethodUsageScopeAttribute.cs" />
     <Compile Include="Startup.cs" />
   </ItemGroup>
   <ItemGroup>

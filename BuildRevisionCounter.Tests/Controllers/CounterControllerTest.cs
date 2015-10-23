@@ -17,7 +17,7 @@ namespace BuildRevisionCounter.Tests.Controllers
 		{
 			DBStorageFactory.DefaultInstance.SetUpAsync().Wait();
 			
-			_controller = new CounterController(DbProviderUtil.GetDataProvider());
+			_controller = new CounterController(DbProviderUtil.GetRevisionDataProvider());
 		}
 		
 		[Test]

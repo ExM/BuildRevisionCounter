@@ -8,8 +8,6 @@ namespace BuildRevisionCounter.Interfaces
 	/// </summary>
 	public interface IDatabaseTestProvider
 	{
-			string AdminName { get; }
-
 			Task SetUp();
 
 			Task DropDatabaseAsync();
@@ -17,7 +15,5 @@ namespace BuildRevisionCounter.Interfaces
 			Task<UserModel> FindUser(string name);
 
 			Task CreateUser(string name, string password, string[] roles);
-
-			Task EnsureAdminUser();
 	}
 }

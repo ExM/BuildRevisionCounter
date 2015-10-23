@@ -1,22 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 using BuildRevisionCounter.Interfaces;
 using BuildRevisionCounter.Model;
+using BuildRevisionCounter.Security;
 using MongoDB.Driver;
 
 namespace BuildRevisionCounter.Data
 {
-	public class MongoDBStorage : IDataProvider, IDatabaseTestProvider
+	public class MongoDBStorage : IRevisionDataProvider, IUserDataProvider, IDatabaseTestProvider
 	{
-		public string AdminName
-		{
-			get { return "admin"; }
-		}
-
-		public static readonly string AdminPassword = "admin";
-		public static readonly string[] AdminRoles = {"admin", "buildserver", "editor"};
-
 		private readonly IMongoCollection<RevisionModel> _revisions;
 		private readonly IMongoCollection<UserModel> _users;
 
@@ -31,14 +25,18 @@ namespace BuildRevisionCounter.Data
 			Task.Run(() => SetUp()).Wait();
 		}
 
+		[MethodUsageScope(MainModuleName = "nunit-agent.exe,nunit.exe,nunit.exe,nunit-x86.exe")]
 		public async Task SetUp()
 		{
+			MethodUsageScopeAttribute.ControlScope(MethodBase.GetCurrentMethod());
 			await EnsureUsersIndex();
-			await EnsureAdminUser();
+			await this.EnsureAdminUser();
 		}
 
+		[MethodUsageScope(MainModuleName = "nunit-agent.exe,nunit.exe,nunit-x86.exe")]
 		public Task DropDatabaseAsync()
 		{
+			MethodUsageScopeAttribute.ControlScope(MethodBase.GetCurrentMethod());
 			return _revisions.Database.Client.DropDatabaseAsync(_revisions.Database.DatabaseNamespace.DatabaseName);
 		}
 
@@ -65,7 +63,32 @@ namespace BuildRevisionCounter.Data
 			return revision.CurrentNumber;
 		}
 
-		public async Task RevisionInsertAsync(string revisionName)
+		public async Task<long> Bumping(string revisionName)
+		{
+			// попробуем обновить документ
+			var result = await FindOneAndUpdateRevisionModelAsync(revisionName);
+			if (result != null)
+				return result.CurrentNumber;
+
+			// если не получилось, значит документ еще не был создан
+			// создадим его с начальным значением 0
+			try
+			{
+				await RevisionInsertAsync(revisionName);
+				return 0;
+			}
+			catch (DuplicateKeyException)
+			{
+			}
+
+			// если при вставке произошла ошибка значит мы не успели и запись там уже есть
+			// и теперь попытка обновления должна пройти без ошибок
+			result = await FindOneAndUpdateRevisionModelAsync(revisionName);
+
+			return result.CurrentNumber;
+		}
+
+		private async Task RevisionInsertAsync(string revisionName)
 		{
 			try
 			{
@@ -85,7 +108,7 @@ namespace BuildRevisionCounter.Data
 			}
 		}
 
-		public async Task<RevisionModel> FindOneAndUpdateRevisionModelAsync(string revisionName)
+		private async Task<RevisionModel> FindOneAndUpdateRevisionModelAsync(string revisionName)
 		{
 			var result = await _revisions
 				.FindOneAndUpdateAsync<RevisionModel>(
@@ -108,14 +131,6 @@ namespace BuildRevisionCounter.Data
 			await _users.Indexes.CreateOneAsync(
 				Builders<UserModel>.IndexKeys.Ascending(u => u.Name),
 				new CreateIndexOptions { Unique = true,  });
-		}
-
-		public async Task EnsureAdminUser()
-		{
-			if (await _users.CountAsync(_ => true) == 0)
-			{
-				await CreateUser(AdminName, AdminPassword, AdminRoles);
-			}
 		}
 
 		public async Task<UserModel> FindUser(string name)

@@ -19,7 +19,7 @@ namespace BuildRevisionCounter.Tests
 		}
 
 		public static IDatabaseTestProvider FromConfigurationConnectionString(string connectionStringName = "MongoDBStorage")
-        {
+		{
 			return GetDatabaseTestProvider(connectionStringName);
 		}
 

@@ -8,16 +8,12 @@ namespace BuildRevisionCounter.Interfaces
 	/// <summary>
 	/// Интерфейс для получения данных из БД.
 	/// </summary>
-	public interface IDataProvider
+	public interface IRevisionDataProvider
 	{
 		Task<IReadOnlyCollection<RevisionModel>> GetAllRevision(Int32 pageSize, Int32 pageNumber);
 
 		Task<long?> CurrentRevision(string revisionName);
 
-		Task RevisionInsertAsync(string revisionName);
-
-		Task<RevisionModel> FindOneAndUpdateRevisionModelAsync(string revisionName);
-
-		Task<UserModel> FindUser(string name);
+		Task<long> Bumping(string revisionName);
 	}
 }

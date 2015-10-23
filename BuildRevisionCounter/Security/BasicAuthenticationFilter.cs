@@ -27,13 +27,13 @@ namespace BuildRevisionCounter.Security
 				EncoderFallback.ExceptionFallback,
 				DecoderFallback.ExceptionFallback);
 
-		private readonly IDataProvider _dataProvider;
+		private readonly IUserDataProvider _dataProvider;
 
 		/// <summary>
 		/// Конструктор фильтра.
 		/// </summary>
 		/// <param name="dataProvider">Объект для получения данных из БД.</param>
-		public BasicAuthenticationFilter(IDataProvider dataProvider)
+		public BasicAuthenticationFilter(IUserDataProvider dataProvider)
 		{
 			if (dataProvider == null)
 				throw new ArgumentNullException("dataProvider");
