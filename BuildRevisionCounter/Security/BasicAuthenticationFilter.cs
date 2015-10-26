@@ -7,8 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http.Filters;
 using BuildRevisionCounter.Interfaces;
-using BuildRevisionCounter.Model;
-using MongoDB.Driver;
 
 namespace BuildRevisionCounter.Security
 {
@@ -29,18 +27,18 @@ namespace BuildRevisionCounter.Security
 				EncoderFallback.ExceptionFallback,
 				DecoderFallback.ExceptionFallback);
 
-		private readonly IMongoDBStorage _mongoDbStorage;
+		private readonly IUserStorage _dataStorage;
 
 		/// <summary>
 		/// Конструктор фильтра.
 		/// </summary>
-		/// <param name="mongoDbStorage">Объект для получения данных из БД Монго.</param>
-		public BasicAuthenticationFilter(IMongoDBStorage mongoDbStorage)
+		/// <param name="dataStorage">Объект для получения данных из БД.</param>
+		public BasicAuthenticationFilter(IUserStorage dataStorage)
 		{
-			if (mongoDbStorage == null)
-				throw new ArgumentNullException("mongoDbStorage");
+			if (dataStorage == null)
+				throw new ArgumentNullException("dataStorage");
 
-			_mongoDbStorage = mongoDbStorage;
+			_dataStorage = dataStorage;
 		}
 
 		public string Realm { get; set; }
@@ -89,10 +87,7 @@ namespace BuildRevisionCounter.Security
 		private async Task<IPrincipal> Authenticate(string userName, string password)
 		{
 			IPrincipal principal = null;
-			var user =
-				await
-					_mongoDbStorage.Users.Find(Builders<UserModel>.Filter.Where(u => u.Name == userName))
-						.SingleOrDefaultAsync();
+			var user = await _dataStorage.FindUser(userName);
 			if (user != null && user.Password == password)
 			{
 				principal = new GenericPrincipal(new GenericIdentity(userName), user.Roles);

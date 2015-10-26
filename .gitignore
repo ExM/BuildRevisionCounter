@@ -11,3 +11,4 @@ TestResults
 TestResult.xml
 /packages/
 /publish/
+_ReSharper*

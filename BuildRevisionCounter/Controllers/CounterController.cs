@@ -6,7 +6,7 @@ using System.Web.Http;
 using BuildRevisionCounter.Interfaces;
 using BuildRevisionCounter.Model;
 using BuildRevisionCounter.Security;
-using MongoDB.Driver;
+using BuildRevisionCounter.Data;
 
 namespace BuildRevisionCounter.Controllers
 {
@@ -14,18 +14,18 @@ namespace BuildRevisionCounter.Controllers
 	[BasicAuthentication]
 	public class CounterController : ApiController
 	{
-		private readonly IMongoDBStorage _mongoDbStorage;
+		private readonly IRevisionStorage _dataStorage;
 
 		/// <summary>
 		/// Конструктор контроллера номеров ревизий.
 		/// </summary>
-		/// <param name="mongoDbStorage">Объект для получения данных из БД Монго.</param>
-		public CounterController(IMongoDBStorage mongoDbStorage)
+		/// <param name="dataStorage">Объект для получения данных из БД.</param>
+		public CounterController(IRevisionStorage dataStorage)
 		{
-			if (mongoDbStorage == null)
-				throw new ArgumentNullException("mongoDbStorage");
+			if (dataStorage == null)
+				throw new ArgumentNullException("dataStorage");
 
-			_mongoDbStorage = mongoDbStorage;
+			_dataStorage = dataStorage;
 		}
 
 		[HttpGet]
@@ -36,11 +36,7 @@ namespace BuildRevisionCounter.Controllers
 			if (pageSize < 1 || pageNumber < 1)
 				throw new HttpResponseException(HttpStatusCode.BadRequest);
 
-			var revisions = await _mongoDbStorage.Revisions
-				.Find(r => true)
-				.Skip(pageSize * (pageNumber - 1))
-				.Limit(pageSize)
-				.ToListAsync();
+			var revisions = await _dataStorage.GetAllRevision(pageSize, pageNumber);
 
 			if (revisions == null)
 				throw new HttpResponseException(HttpStatusCode.NotFound);
@@ -53,14 +49,12 @@ namespace BuildRevisionCounter.Controllers
 		[Authorize(Roles = "admin, editor, anonymous")]
 		public async Task<long> Current([FromUri] string revisionName)
 		{
-			var revision = await _mongoDbStorage.Revisions
-				.Find(r => r.Id == revisionName)
-				.SingleOrDefaultAsync();
+			var revisionNumber = await _dataStorage.CurrentRevision(revisionName);
 
-			if (revision == null)
+			if (revisionNumber == null)
 				throw new HttpResponseException(HttpStatusCode.NotFound);
 
-			return revision.CurrentNumber;
+			return revisionNumber.Value;
 		}
 
 		[HttpPost]
@@ -68,58 +62,7 @@ namespace BuildRevisionCounter.Controllers
 		[Authorize(Roles = "buildserver")]
 		public async Task<long> Bumping([FromUri] string revisionName)
 		{
-			// попробуем обновить документ
-			var result = await FindOneAndUpdateRevisionModelAsync(revisionName);
-			if (result != null)
-				return result.CurrentNumber;
-
-			// если не получилось, значит документ еще не был создан
-			// создадим его с начальным значением 0
-			try
-			{
-				await _mongoDbStorage.Revisions
-					.InsertOneAsync(new RevisionModel
-					{
-						Id = revisionName,
-						CurrentNumber = 0,
-						Created = DateTime.UtcNow
-					});
-				return 0;
-			}
-			catch (MongoWriteException ex)
-			{
-				if (ex.WriteError.Category != ServerErrorCategory.DuplicateKey)
-					throw;
-			}
-
-			// если при вставке произошла ошибка значит мы не успели и запись там уже есть
-			// и теперь попытка обновления должна пройти без ошибок
-			result = await FindOneAndUpdateRevisionModelAsync(revisionName);
-
-			return result.CurrentNumber;
-		}
-
-		/// <summary>
-		///		Инкриментит каунтер в БД
-		/// </summary>
-		/// <param name="revisionName"></param>
-		/// <returns></returns>
-		private async Task<RevisionModel> FindOneAndUpdateRevisionModelAsync(string revisionName)
-		{
-			var result = await _mongoDbStorage.Revisions
-				.FindOneAndUpdateAsync<RevisionModel>(
-					r => r.Id == revisionName,
-					Builders<RevisionModel>.Update
-						.Inc(r => r.CurrentNumber, 1)
-						.SetOnInsert(r => r.Created, DateTime.UtcNow)
-						.Set(r => r.Updated, DateTime.UtcNow),
-					new FindOneAndUpdateOptions<RevisionModel>
-					{
-						IsUpsert = false,
-						ReturnDocument = ReturnDocument.After
-					});
-
-			return result;
+			return await _dataStorage.Bumping(revisionName);
 		}
 	}
 }

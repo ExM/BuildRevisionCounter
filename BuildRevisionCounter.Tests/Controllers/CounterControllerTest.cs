@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using System.Web.Http;
 using BuildRevisionCounter.Controllers;
+using BuildRevisionCounter.Data;
 using NUnit.Framework;
 
 namespace BuildRevisionCounter.Tests.Controllers
@@ -14,9 +15,8 @@ namespace BuildRevisionCounter.Tests.Controllers
 		[TestFixtureSetUp]
 		public void SetUp()
 		{
-			MongoDBStorageUtils.SetUpAsync().Wait();
-
-			_controller = new CounterController(MongoDBStorageFactory.DefaultInstance);
+			DBStorageFactory.DefaultInstance.SetUp().Wait();
+			_controller = new CounterController(DBStorageUtil.GetRevisionStorage(connectionString: DBStorageFactory.DefaultInstance.ConnectionString));
 		}
 		
 		[Test]
@@ -54,6 +54,12 @@ namespace BuildRevisionCounter.Tests.Controllers
 			var rev1 = await _controller.Bumping("CurrentReturnSameValueAsPreviousBumping");
 			var rev2 = await _controller.Current("CurrentReturnSameValueAsPreviousBumping");
 			Assert.AreEqual(rev1, rev2);
+		}
+
+		[TestFixtureTearDown]
+		public void DropDatabaseAsync()
+		{
+			DBStorageFactory.DefaultInstance.DropDatabaseAsync().Wait();
 		}
 	}
 }
