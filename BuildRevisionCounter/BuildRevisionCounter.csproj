@@ -124,20 +124,20 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Controllers\CounterController.cs" />
-    <Compile Include="Data\DbProviderUtil.cs" />
+    <Compile Include="Data\DBStorageUtil.cs" />
     <Compile Include="Data\DuplicateKeyException.cs" />
-    <Compile Include="Interfaces\IDatabaseTestProvider.cs" />
-    <Compile Include="Interfaces\IRevisionDataProvider.cs" />
-    <Compile Include="Interfaces\IUserDataProvider.cs" />
+    <Compile Include="Data\MongoDBUserStorage.cs" />
+    <Compile Include="Interfaces\IUserDatabaseTestProvider.cs" />
+    <Compile Include="Interfaces\IRevisionStorage.cs" />
+    <Compile Include="Interfaces\IUserStorage.cs" />
     <Compile Include="Model\RevisionModel.cs" />
     <Compile Include="Model\UserModel.cs" />
-    <Compile Include="Data\MongoDBStorage.cs" />
+    <Compile Include="Data\MongoDBRevisionStorage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Security\AddChallengeOnUnauthorizedResult.cs" />
     <Compile Include="Security\AuthenticationFailureResult.cs" />
     <Compile Include="Security\BasicAuthenticationFilter.cs" />
     <Compile Include="Security\BasicAuthenticationAttribute.cs" />
-    <Compile Include="Security\MethodUsageScopeAttribute.cs" />
     <Compile Include="Startup.cs" />
   </ItemGroup>
   <ItemGroup>

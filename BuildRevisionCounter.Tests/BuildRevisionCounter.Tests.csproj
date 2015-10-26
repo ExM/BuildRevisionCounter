@@ -92,6 +92,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="Controllers\CounterControllerTest.cs" />
+    <Compile Include="DBUtil.cs" />
     <Compile Include="IntegrationTest\IntegrationTest.cs" />
     <Compile Include="BuildRevisionCounterTest.cs" />
     <Compile Include="DBStorageFactory.cs" />

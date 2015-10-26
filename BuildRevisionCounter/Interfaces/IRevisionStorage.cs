@@ -8,7 +8,7 @@ namespace BuildRevisionCounter.Interfaces
 	/// <summary>
 	/// Интерфейс для получения данных из БД.
 	/// </summary>
-	public interface IRevisionDataProvider
+	public interface IRevisionStorage
 	{
 		Task<IReadOnlyCollection<RevisionModel>> GetAllRevision(Int32 pageSize, Int32 pageNumber);
 

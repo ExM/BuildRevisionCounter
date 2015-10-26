@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using BuildRevisionCounter.Data;
@@ -24,19 +26,28 @@ namespace BuildRevisionCounter.Tests
 		[TestFixtureSetUp]
 		public void Setup()
 		{
+			ChangeConnectionStringInConfigurationManager("MongoDBStorage", DBStorageFactory.DefaultInstance.ConnectionString);
+
 			var port = GetFreeTcpPort();
 			_uri = string.Format("http://localhost:{0}", port);
 			_application = WebApp.Start<Startup>(_uri);
 
-
-			DBStorageFactory.DefaultInstance.SetUpAsync().Wait();
+			DBStorageFactory.DefaultInstance.SetUp().Wait();
 		}
 
+		private static void ChangeConnectionStringInConfigurationManager(string connectionStringName, string connectionString)
+		{
+			var settings = ConfigurationManager.ConnectionStrings[connectionStringName];
+			var fi = typeof (ConfigurationElement).GetField("_bReadOnly", BindingFlags.Instance | BindingFlags.NonPublic);
+			fi.SetValue(settings, false);
+			settings.ConnectionString = connectionString;
+		}
 
 		[TestFixtureTearDown]
 		public void TearDown()
 		{
 			_application.Dispose();
+			DBStorageFactory.DefaultInstance.DropDatabaseAsync().Wait();
 		}
 
 		private static int GetFreeTcpPort()
@@ -81,6 +92,12 @@ namespace BuildRevisionCounter.Tests
 				var responseMessage = await HttpClient.PostAsync(apiUri, content);
 				return await responseMessage.Content.ReadAsStringAsync();
 			}
+		}
+
+		[TestFixtureTearDown]
+		public void DropDatabaseAsync()
+		{
+			DBStorageFactory.DefaultInstance.DropDatabaseAsync().Wait();
 		}
 	}
 

@@ -15,9 +15,8 @@ namespace BuildRevisionCounter.Tests.Controllers
 		[TestFixtureSetUp]
 		public void SetUp()
 		{
-			DBStorageFactory.DefaultInstance.SetUpAsync().Wait();
-			
-			_controller = new CounterController(DbProviderUtil.GetRevisionDataProvider());
+			DBStorageFactory.DefaultInstance.SetUp().Wait();
+			_controller = new CounterController(DBStorageUtil.GetRevisionStorage(connectionString: DBStorageFactory.DefaultInstance.ConnectionString));
 		}
 		
 		[Test]
@@ -55,6 +54,12 @@ namespace BuildRevisionCounter.Tests.Controllers
 			var rev1 = await _controller.Bumping("CurrentReturnSameValueAsPreviousBumping");
 			var rev2 = await _controller.Current("CurrentReturnSameValueAsPreviousBumping");
 			Assert.AreEqual(rev1, rev2);
+		}
+
+		[TestFixtureTearDown]
+		public void DropDatabaseAsync()
+		{
+			DBStorageFactory.DefaultInstance.DropDatabaseAsync().Wait();
 		}
 	}
 }

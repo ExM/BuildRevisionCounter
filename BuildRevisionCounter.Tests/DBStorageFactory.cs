@@ -7,36 +7,34 @@ namespace BuildRevisionCounter.Tests
 {
 	public static class DBStorageFactory
 	{
-		private static readonly Lazy<IDatabaseTestProvider> _defaultInstance =
-			new Lazy<IDatabaseTestProvider>(() => FromConfigurationConnectionString());
+		private static readonly Lazy<IUserDatabaseTestProvider> _defaultInstance =
+			new Lazy<IUserDatabaseTestProvider>(() => FromConfigurationConnectionString());
 
-		public static IDatabaseTestProvider DefaultInstance { get { return _defaultInstance.Value; } }
+		public static IUserDatabaseTestProvider DefaultInstance { get { return _defaultInstance.Value; } }
 
 
-		public static IDatabaseTestProvider GetInstance<T>(string connectionStringName = "MongoDBStorage") where T : IDatabaseTestProvider
+		public static IUserDatabaseTestProvider GetInstance<T>(string connectionStringName = "MongoDBStorage") where T : IUserDatabaseTestProvider
 		{
 			return GetDatabaseTestProvider<T>(connectionStringName);
 		}
 
-		public static IDatabaseTestProvider FromConfigurationConnectionString(string connectionStringName = "MongoDBStorage")
+		public static IUserDatabaseTestProvider FromConfigurationConnectionString(string connectionStringName = "MongoDBStorage")
 		{
 			return GetDatabaseTestProvider(connectionStringName);
 		}
 
-		private static IDatabaseTestProvider GetDatabaseTestProvider(string connectionStringName)
+		private static IUserDatabaseTestProvider GetDatabaseTestProvider(string connectionStringName)
 		{
-			const string typeName = "BuildRevisionCounter.Data.MongoDBStorage,BuildRevisionCounter";
-			var type = Type.GetType(typeName);
-			if (type == null)
-				throw new ApplicationException("на найден класс для IDataProvider");
 			var connectionString = ConfigurationManager.ConnectionStrings[connectionStringName].ConnectionString;
-			return (IDatabaseTestProvider)Activator.CreateInstance(type, connectionString);
+			connectionString = DBUtil.SetDatabaseNameRandom(typeof(MongoDBUserStorage), connectionString);
+			return new MongoDBUserStorage(connectionString);
 		}
 
-		private static IDatabaseTestProvider GetDatabaseTestProvider<T>(string connectionStringName) where T : IDatabaseTestProvider
+		private static IUserDatabaseTestProvider GetDatabaseTestProvider<T>(string connectionStringName) where T : IUserDatabaseTestProvider
 		{
 			var connectionString = ConfigurationManager.ConnectionStrings[connectionStringName].ConnectionString;
-			return (IDatabaseTestProvider)Activator.CreateInstance(typeof(T), connectionString);
+			connectionString = DBUtil.SetDatabaseNameRandom(typeof (T), connectionString);
+			return (IUserDatabaseTestProvider)Activator.CreateInstance(typeof(T), connectionString);
 		}
 	}
 }

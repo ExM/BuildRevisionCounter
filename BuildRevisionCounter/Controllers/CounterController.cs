@@ -14,18 +14,18 @@ namespace BuildRevisionCounter.Controllers
 	[BasicAuthentication]
 	public class CounterController : ApiController
 	{
-		private readonly IRevisionDataProvider _dataProvider;
+		private readonly IRevisionStorage _dataStorage;
 
 		/// <summary>
 		/// Конструктор контроллера номеров ревизий.
 		/// </summary>
-		/// <param name="dataProvider">Объект для получения данных из БД.</param>
-		public CounterController(IRevisionDataProvider dataProvider)
+		/// <param name="dataStorage">Объект для получения данных из БД.</param>
+		public CounterController(IRevisionStorage dataStorage)
 		{
-			if (dataProvider == null)
-				throw new ArgumentNullException("dataProvider");
+			if (dataStorage == null)
+				throw new ArgumentNullException("dataStorage");
 
-			_dataProvider = dataProvider;
+			_dataStorage = dataStorage;
 		}
 
 		[HttpGet]
@@ -36,7 +36,7 @@ namespace BuildRevisionCounter.Controllers
 			if (pageSize < 1 || pageNumber < 1)
 				throw new HttpResponseException(HttpStatusCode.BadRequest);
 
-			var revisions = await _dataProvider.GetAllRevision(pageSize, pageNumber);
+			var revisions = await _dataStorage.GetAllRevision(pageSize, pageNumber);
 
 			if (revisions == null)
 				throw new HttpResponseException(HttpStatusCode.NotFound);
@@ -49,7 +49,7 @@ namespace BuildRevisionCounter.Controllers
 		[Authorize(Roles = "admin, editor, anonymous")]
 		public async Task<long> Current([FromUri] string revisionName)
 		{
-			var revisionNumber = await _dataProvider.CurrentRevision(revisionName);
+			var revisionNumber = await _dataStorage.CurrentRevision(revisionName);
 
 			if (revisionNumber == null)
 				throw new HttpResponseException(HttpStatusCode.NotFound);
@@ -62,7 +62,7 @@ namespace BuildRevisionCounter.Controllers
 		[Authorize(Roles = "buildserver")]
 		public async Task<long> Bumping([FromUri] string revisionName)
 		{
-			return await _dataProvider.Bumping(revisionName);
+			return await _dataStorage.Bumping(revisionName);
 		}
 	}
 }

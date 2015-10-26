@@ -27,18 +27,18 @@ namespace BuildRevisionCounter.Security
 				EncoderFallback.ExceptionFallback,
 				DecoderFallback.ExceptionFallback);
 
-		private readonly IUserDataProvider _dataProvider;
+		private readonly IUserStorage _dataStorage;
 
 		/// <summary>
 		/// Конструктор фильтра.
 		/// </summary>
-		/// <param name="dataProvider">Объект для получения данных из БД.</param>
-		public BasicAuthenticationFilter(IUserDataProvider dataProvider)
+		/// <param name="dataStorage">Объект для получения данных из БД.</param>
+		public BasicAuthenticationFilter(IUserStorage dataStorage)
 		{
-			if (dataProvider == null)
-				throw new ArgumentNullException("dataProvider");
+			if (dataStorage == null)
+				throw new ArgumentNullException("dataStorage");
 
-			_dataProvider = dataProvider;
+			_dataStorage = dataStorage;
 		}
 
 		public string Realm { get; set; }
@@ -87,7 +87,7 @@ namespace BuildRevisionCounter.Security
 		private async Task<IPrincipal> Authenticate(string userName, string password)
 		{
 			IPrincipal principal = null;
-			var user = await _dataProvider.FindUser(userName);
+			var user = await _dataStorage.FindUser(userName);
 			if (user != null && user.Password == password)
 			{
 				principal = new GenericPrincipal(new GenericIdentity(userName), user.Roles);

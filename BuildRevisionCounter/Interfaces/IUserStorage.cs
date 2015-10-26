@@ -3,7 +3,7 @@ using BuildRevisionCounter.Model;
 
 namespace BuildRevisionCounter.Interfaces
 {
-	public interface IUserDataProvider
+	public interface IUserStorage
 	{
 		Task<UserModel> FindUser(string name);
 

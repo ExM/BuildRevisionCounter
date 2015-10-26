@@ -57,8 +57,8 @@ namespace BuildRevisionCounter
 		/// <param name="kernel">Ядро Ninject.</param>
 		private static void RegisterServices(IKernel kernel)
 		{
-			kernel.Bind<IRevisionDataProvider>().ToMethod(c => DbProviderUtil.GetRevisionDataProvider()).InSingletonScope();
-			kernel.Bind<IUserDataProvider>().ToMethod(c => DbProviderUtil.GetUserDataProvider()).InSingletonScope();
+			kernel.Bind<IRevisionStorage>().ToMethod(c => DBStorageUtil.GetRevisionStorage()).InSingletonScope();
+			kernel.Bind<IUserStorage>().ToMethod(c => DBStorageUtil.GetUserStorage()).InSingletonScope();
 			kernel.BindHttpFilter<BasicAuthenticationFilter>(FilterScope.Controller).WhenControllerHas<BasicAuthenticationAttribute>();
 		}
 	}

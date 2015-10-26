@@ -6,14 +6,14 @@ namespace BuildRevisionCounter.Interfaces
 	/// <summary>
 	/// Интерфейс для проверки операций с БД.
 	/// </summary>
-	public interface IDatabaseTestProvider
+	public interface IUserDatabaseTestProvider
 	{
+			string ConnectionString { get; }
+			
 			Task SetUp();
-
-			Task DropDatabaseAsync();
-
+			
 			Task<UserModel> FindUser(string name);
-
+			
 			Task CreateUser(string name, string password, string[] roles);
 	}
 }

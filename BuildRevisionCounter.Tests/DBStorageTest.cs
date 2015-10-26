@@ -8,7 +8,7 @@ namespace BuildRevisionCounter.Tests
 	[TestFixture]
 	public class DBStorageTest
 	{
-		private IDatabaseTestProvider _storage;
+		private IUserDatabaseTestProvider _storage;
 
 		[TestFixtureSetUp]
 		public void SetUp()
@@ -18,8 +18,8 @@ namespace BuildRevisionCounter.Tests
 
 		public async Task SetUpAsync()
 		{
-			_storage = DBStorageFactory.GetInstance<MongoDBStorage>();
-			await _storage.SetUpAsync();
+			_storage = DBStorageFactory.GetInstance<MongoDBUserStorage>();
+			await _storage.SetUp();
 		}
 
 		[Test]
@@ -74,6 +74,12 @@ namespace BuildRevisionCounter.Tests
 			catch (DuplicateKeyException)
 			{
 			}
+		}
+
+		[TestFixtureTearDown]
+		public void DropDatabaseAsync()
+		{
+			_storage.DropDatabaseAsync().Wait();
 		}
 	}
 }
