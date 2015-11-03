@@ -25,7 +25,7 @@ namespace BuildRevisionCounter.Tests
 		{
 			var port = GetFreeTcpPort();
 			_uri = string.Format("http://localhost:{0}", port);
-			_application = WebApp.Start<Startup>(_uri);
+			_application = WebApp.Start<Web.Startup>(_uri);
 
 			MongoDBStorageUtils.SetUpAsync().Wait();
 		}

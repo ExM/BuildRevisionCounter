@@ -26,6 +26,7 @@ namespace BuildRevisionCounter.Tests
 			body = await SendGetRequest(apiUri);
 			result = JArray.Parse(body);
 
+			Assert.AreEqual(result.Count, totalCounters + 3, "Revisions weren't added.");
 			Assert.AreEqual(result.Count - 3, totalCounters);
 		}
 

@@ -11,3 +11,5 @@ TestResults
 TestResult.xml
 /packages/
 /publish/
+/.vs/config
+/.vs
