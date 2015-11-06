@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
 
-namespace BuildRevisionCounter.Security
+namespace BuildRevisionCounter.Web.Security
 {
 	public class AddChallengeOnUnauthorizedResult : IHttpActionResult
 	{

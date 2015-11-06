@@ -57,6 +57,10 @@
     <Reference Include="MongoDB.Driver.Core">
       <HintPath>..\packages\MongoDB.Driver.Core.2.0.0\lib\net45\MongoDB.Driver.Core.dll</HintPath>
     </Reference>
+    <Reference Include="Moq, Version=4.2.1510.2205, Culture=neutral, PublicKeyToken=69f491c39445e920, processorArchitecture=MSIL">
+      <HintPath>..\packages\Moq.4.2.1510.2205\lib\net40\Moq.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -89,17 +93,26 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="Controllers\ControllerTestWithoutDB.cs" />
     <Compile Include="Controllers\CounterControllerTest.cs" />
     <Compile Include="IntegrationTest\IntegrationTest.cs" />
     <Compile Include="BuildRevisionCounterTest.cs" />
-    <Compile Include="MongoDBStorageFactory.cs" />
-    <Compile Include="MongoDBStorageTest.cs" />
+    <Compile Include="MongoDatabaseFactory.cs" />
+    <Compile Include="MongoUserRepositoryTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MongoDBStorageUtils.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BuildRevisionCounter\BuildRevisionCounter.csproj">
+    <ProjectReference Include="..\BuildRevisionCounter.MongoDB\BuildRevisionCounter.MongoDB.csproj">
+      <Project>{b2d98e99-5535-4d17-90fe-94388151fba0}</Project>
+      <Name>BuildRevisionCounter.MongoDB</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BuildRevisionCounter.Web\BuildRevisionCounter.Web.csproj">
       <Project>{64eeea30-fce1-4aa6-a375-ebd721914708}</Project>
+      <Name>BuildRevisionCounter.Web</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BuildRevisionCounter\BuildRevisionCounter.csproj">
+      <Project>{4f35ca7e-9978-43a3-aa83-1e232181cd2a}</Project>
       <Name>BuildRevisionCounter</Name>
     </ProjectReference>
   </ItemGroup>
