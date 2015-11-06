@@ -1,4 +1,7 @@
-﻿using System;
+﻿using BuildRevisionCounter.MongoDB;
+using BuildRevisionCounter.MongoDB.Model;
+using MongoDB.Driver;
+using System;
 using System.Threading.Tasks;
 
 namespace BuildRevisionCounter.Tests
@@ -7,11 +10,8 @@ namespace BuildRevisionCounter.Tests
 	{
 		public static async Task SetUpAsync()
 		{
-			var storage = MongoDBStorageFactory.DefaultInstance;
-			await storage.Revisions.Database.Client.DropDatabaseAsync(
-				storage.Revisions.Database.DatabaseNamespace.DatabaseName);
-
-			await storage.SetUp();			
-		}
+			var db = MongoDatabaseFactory.DefaultInstance;
+			await db.Client.DropDatabaseAsync(db.DatabaseNamespace.DatabaseName);			
+		}		
 	}
 }

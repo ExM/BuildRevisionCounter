@@ -1,7 +1,5 @@
-﻿using System.Net;
-using System.Threading.Tasks;
-using System.Web.Http;
-using BuildRevisionCounter.Controllers;
+﻿using System.Threading.Tasks;
+using BuildRevisionCounter.Web.Controllers;
 using NUnit.Framework;
 
 namespace BuildRevisionCounter.Tests.Controllers
@@ -16,26 +14,19 @@ namespace BuildRevisionCounter.Tests.Controllers
 		{
 			MongoDBStorageUtils.SetUpAsync().Wait();
 
-			_controller = new CounterController(MongoDBStorageFactory.DefaultInstance);
+			_controller = new CounterController(new MongoDB.MongoRevisionRepository(MongoDatabaseFactory.DefaultInstance));
 		}
 		
 		[Test]
+		[ExpectedException(typeof(RevisionNotFoundException))]		
 		public async Task CurrentThrowsExceptionIfRevisionNotFound()
 		{
-			try
-			{
-				var rev = await _controller.Current("CurrentThrowsExceptionIfRevisionNotFound");
-				Assert.Fail();
-			}
-			catch (HttpResponseException ex)
-			{
-				Assert.AreEqual(HttpStatusCode.NotFound, ex.Response.StatusCode);
-			}
+			var rev = await _controller.Current("CurrentThrowsExceptionIfRevisionNotFound");
 		}
 
 		[Test]
 		public async Task BumpingNewRevisionReturnsZero()
-		{
+		{			
 			var rev = await _controller.Bumping("BumpingNewRevisionReturnsZero");
 			Assert.AreEqual(0, rev);
 		}
