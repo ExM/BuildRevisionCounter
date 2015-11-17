@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace BuildRevisionCounter.Tests.Controllers
 {
 	[TestFixture]
-	public class ControllerTestWithoutDB
+	public class CounterControllerTestWithoutDB
 	{
 		private CounterController _controller;
 

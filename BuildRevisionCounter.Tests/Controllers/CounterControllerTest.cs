@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
+using BuildRevisionCounter.Exceptions;
 using BuildRevisionCounter.Web.Controllers;
 using NUnit.Framework;
 
@@ -12,8 +14,6 @@ namespace BuildRevisionCounter.Tests.Controllers
 		[TestFixtureSetUp]
 		public void SetUp()
 		{
-			MongoDBStorageUtils.SetUpAsync().Wait();
-
 			_controller = new CounterController(new MongoDB.MongoRevisionRepository(MongoDatabaseFactory.DefaultInstance));
 		}
 		
@@ -27,15 +27,16 @@ namespace BuildRevisionCounter.Tests.Controllers
 		[Test]
 		public async Task BumpingNewRevisionReturnsZero()
 		{			
-			var rev = await _controller.Bumping("BumpingNewRevisionReturnsZero");
+			var rev = await _controller.Bumping("BumpingNewRevisionReturnsZero_" + Guid.NewGuid());
 			Assert.AreEqual(0, rev);
 		}
 
 		[Test]
 		public async Task BumpingIncrementsRevisionNumber()
 		{
-			var rev1 = await _controller.Bumping("BumpingIncrementsRevisionNumber");
-			var rev2 = await _controller.Bumping("BumpingIncrementsRevisionNumber");
+			var revisionName = "BumpingIncrementsRevisionNumber" + Guid.NewGuid();
+			var rev1 = await _controller.Bumping(revisionName);
+			var rev2 = await _controller.Bumping(revisionName);
 			Assert.AreEqual(rev1 + 1, rev2);
 		}
 

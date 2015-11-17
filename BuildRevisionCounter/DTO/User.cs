@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace BuildRevisionCounter.DTO
@@ -15,12 +14,7 @@ namespace BuildRevisionCounter.DTO
 		public string Name { get; private set; }
 
 		/// <summary>
-		/// Пароль пользователя.
-		/// </summary>
-		public string Password { get; private set; }
-
-		/// <summary>
-		/// Роли пользователя.       
+		/// Роли пользователя.
 		/// </summary>
 		public IReadOnlyCollection<string> Roles { get; private set; }
 
@@ -28,12 +22,10 @@ namespace BuildRevisionCounter.DTO
 		/// Создает новый экземпляр пользователя.
 		/// </summary>
 		/// <param name="name">Наименование пользователя.</param>
-		/// <param name="pswd">Пароль  пользователя.</param>
 		/// <param name="roles">Роли  пользователя.</param>
-		public User(string name, string pswd, IEnumerable<string> roles)
+		public User(string name, IEnumerable<string> roles)
 		{
 			Name = name;
-			Password = pswd;
 			Roles = roles.ToList();
 		}
 	}

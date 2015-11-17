@@ -44,11 +44,12 @@
   <ItemGroup>
     <Compile Include="DTO\Revision.cs" />
     <Compile Include="DTO\User.cs" />
+    <Compile Include="Exceptions\DuplicateKeyException.cs" />
+    <Compile Include="Exceptions\IncorrectRoleListException.cs" />
+    <Compile Include="Exceptions\RevisionNotFoundException.cs" />
     <Compile Include="IRevisionRepository.cs" />
     <Compile Include="IUserRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="DuplicateKeyException.cs" />
-    <Compile Include="RevisionNotFoundException.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

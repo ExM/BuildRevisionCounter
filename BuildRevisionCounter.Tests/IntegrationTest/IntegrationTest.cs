@@ -15,8 +15,6 @@ namespace BuildRevisionCounter.Tests
 	{
 		private IDisposable _application;
 
-		protected HttpClient HttpClient;
-
 		private string _uri;
 		protected string Uri { get { return _uri; } }
 
@@ -26,8 +24,6 @@ namespace BuildRevisionCounter.Tests
 			var port = GetFreeTcpPort();
 			_uri = string.Format("http://localhost:{0}", port);
 			_application = WebApp.Start<Web.Startup>(_uri);
-
-			MongoDBStorageUtils.SetUpAsync().Wait();
 		}
 
 
@@ -46,38 +42,36 @@ namespace BuildRevisionCounter.Tests
 			return port;
 		}
 
-		protected async Task<string> SendGetRequest(string apiUri, string userName = "admin", string password = "admin")
+		protected async Task<HttpResponseMessage> SendGetRequest(string apiUri, string userName = "admin", string password = "admin")
 		{
-			using (HttpClient = new HttpClient { BaseAddress = new Uri(Uri) })
+			using (var httpClient = new HttpClient { BaseAddress = new Uri(Uri) })
 			{
 				if (!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password))
-					HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+					httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
 						Convert.ToBase64String(
 							Encoding.ASCII.GetBytes(
 								string.Format("{0}:{1}", userName, password))));
 
-				var responseMessage = await HttpClient.GetAsync(apiUri);
-				return await responseMessage.Content.ReadAsStringAsync();
+				return await httpClient.GetAsync(apiUri);
 			}
 		}
 
-		protected async Task<string> SendPostRequest(string apiUri, string userName = "admin", string password = "admin")
+		protected async Task<HttpResponseMessage> SendPostRequest(string apiUri, string userName = "admin", string password = "admin")
 		{
-			using (HttpClient = new HttpClient { BaseAddress = new Uri(Uri) })
+			using (var httpClient = new HttpClient { BaseAddress = new Uri(Uri) })
 			{
 				if (!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password))
-					HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+					httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
 						Convert.ToBase64String(
 							Encoding.ASCII.GetBytes(
 								string.Format("{0}:{1}", userName, password))));
 
 				var content = new FormUrlEncodedContent(new[]
-                {
-                    new KeyValuePair<string, string>("", "")
-                });
+				{
+					new KeyValuePair<string, string>("", "")
+				});
 
-				var responseMessage = await HttpClient.PostAsync(apiUri, content);
-				return await responseMessage.Content.ReadAsStringAsync();
+				return await httpClient.PostAsync(apiUri, content);
 			}
 		}
 	}
