@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace BuildRevisionCounter
+namespace BuildRevisionCounter.Exceptions
 {
 	/// <summary>
 	/// Исключение, генерируется в случае если ревизия не была найдена.

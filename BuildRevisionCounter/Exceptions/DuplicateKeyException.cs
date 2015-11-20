@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace BuildRevisionCounter
+namespace BuildRevisionCounter.Exceptions
 {
 	/// <summary>
 	/// Исключение при записи дубля в репозиторий.

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
@@ -13,7 +14,8 @@ namespace BuildRevisionCounter.Tests
 		{
 			var apiUri = "api/counter";
 
-			var body = await SendGetRequest(apiUri);
+			var response = await SendGetRequest(apiUri);
+			var body = await response.Content.ReadAsStringAsync();
 			dynamic result = JArray.Parse(body);
 			int totalCounters = result.Count;
 
@@ -23,7 +25,8 @@ namespace BuildRevisionCounter.Tests
 			await SendPostRequest(apiUri + "/" + Guid.NewGuid());
 			await SendPostRequest(apiUri + "/" + Guid.NewGuid());
 
-			body = await SendGetRequest(apiUri);
+			response = await SendGetRequest(apiUri);
+			body = await response.Content.ReadAsStringAsync();
 			result = JArray.Parse(body);
 
 			Assert.AreEqual(result.Count, totalCounters + 3, "Revisions weren't added.");
@@ -36,7 +39,8 @@ namespace BuildRevisionCounter.Tests
 			var revName = "revision_" + Guid.NewGuid();
 			var apiUri = "api/counter/" + revName;
 
-			var body = await SendPostRequest(apiUri);
+			var response = await SendPostRequest(apiUri);
+			var body = await response.Content.ReadAsStringAsync();
 
 			Assert.AreEqual("0", body);
 		}
@@ -49,7 +53,8 @@ namespace BuildRevisionCounter.Tests
 
 			await SendPostRequest(apiUri); //counter == 0
 
-			var body = await SendPostRequest(apiUri); //counter++
+			var response = await SendPostRequest(apiUri); //counter++
+			var body = await response.Content.ReadAsStringAsync();
 
 			Assert.AreEqual("1", body);
 		}
@@ -63,7 +68,8 @@ namespace BuildRevisionCounter.Tests
 			await SendPostRequest(apiUri); //counter == 0
 			await SendPostRequest(apiUri); // counter++
 
-			var body = await SendGetRequest(apiUri);
+			var response = await SendGetRequest(apiUri);
+			var body = await response.Content.ReadAsStringAsync();
 
 			Assert.AreEqual("1", body);
 		}
@@ -72,7 +78,7 @@ namespace BuildRevisionCounter.Tests
 		public async Task GetCurrentRevisionNotFound()
 		{
 			var body = await SendGetRequest("api/counter/nonexistingrevision");
-			Assert.AreEqual("", body);
+			Assert.AreEqual(body.StatusCode, HttpStatusCode.NotFound);
 		}
 	}
 }

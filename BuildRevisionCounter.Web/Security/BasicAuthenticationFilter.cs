@@ -88,9 +88,9 @@ namespace BuildRevisionCounter.Web.Security
 		private async Task<IPrincipal> Authenticate(string userName, string password)
 		{
 			IPrincipal principal = null;
-			var user = await _userRepo.FindUserByName(userName);
+			var user = await _userRepo.FindUserByNameAndPassword(userName, password);
 
-			if (user != null && user.Password == password)
+			if (user != null)
 			{
 				principal = new GenericPrincipal(new GenericIdentity(userName), user.Roles.ToArray());
 			}

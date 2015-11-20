@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using System.Web.Http;
-using BuildRevisionCounter.Web.Security;
 using BuildRevisionCounter.DTO;
-using BuildRevisionCounter.Web.Filters;
+using BuildRevisionCounter.Web.Security;
 
 namespace BuildRevisionCounter.Web.Controllers
 {
@@ -30,10 +29,10 @@ namespace BuildRevisionCounter.Web.Controllers
 		[HttpGet]
 		[Route("")]
 		[Authorize(Roles = "admin, editor, anonymous")]
-		public  Task<IReadOnlyCollection<Revision>> GetAllRevision([FromUri] Int32 pageSize = 20, [FromUri] Int32 pageNumber = 1)
+		public Task<IReadOnlyCollection<Revision>> GetAllRevision([FromUri] int pageSize = 20, [FromUri] int pageNumber = 1)
 		{
 			if (pageSize < 1 || pageNumber < 1)
-				throw new HttpResponseException(HttpStatusCode.BadRequest);			
+				throw new HttpResponseException(HttpStatusCode.BadRequest);
 
 			return _revisionRepo.GetAllRevision(pageSize, pageNumber);
 		}
@@ -41,7 +40,6 @@ namespace BuildRevisionCounter.Web.Controllers
 		[HttpGet]
 		[Route("{revisionName}")]
 		[Authorize(Roles = "admin, editor, anonymous")]
-		[RevisionNotFoundExceptionFilter]
 		public Task<long> Current([FromUri] string revisionName)
 		{
 			return _revisionRepo.Current(revisionName);

@@ -93,14 +93,14 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="Controllers\ControllerTestWithoutDB.cs" />
+    <Compile Include="Controllers\CounterControllerTestWithoutDB.cs" />
     <Compile Include="Controllers\CounterControllerTest.cs" />
+    <Compile Include="Controllers\UserControllerTest.cs" />
     <Compile Include="IntegrationTest\IntegrationTest.cs" />
     <Compile Include="BuildRevisionCounterTest.cs" />
     <Compile Include="MongoDatabaseFactory.cs" />
     <Compile Include="MongoUserRepositoryTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="MongoDBStorageUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BuildRevisionCounter.MongoDB\BuildRevisionCounter.MongoDB.csproj">

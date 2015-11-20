@@ -1,5 +1,4 @@
-﻿using System.Configuration;
-using System.Web.Http.Filters;
+﻿using System.Web.Http.Filters;
 using Microsoft.Owin;
 using MongoDB.Driver;
 using Ninject;
@@ -11,6 +10,7 @@ using System.Web.Http;
 using System.Net.Http.Formatting;
 using BuildRevisionCounter.Web.Security;
 using BuildRevisionCounter.MongoDB;
+using BuildRevisionCounter.Web.Filters;
 
 [assembly: OwinStartup(typeof(BuildRevisionCounter.Web.Startup))]
 
@@ -61,6 +61,8 @@ namespace BuildRevisionCounter.Web
 			kernel.Bind<IRevisionRepository>().To<MongoRevisionRepository>().InSingletonScope();
 			kernel.Bind<IMongoDatabase>().ToMethod(c=>MongoHelper.GetMongoDb()).InSingletonScope();
 			kernel.BindHttpFilter<BasicAuthenticationFilter>(FilterScope.Controller).WhenControllerHas<BasicAuthenticationAttribute>();
+			kernel.BindHttpFilter<KnownExceptionFilterAttribute>(FilterScope.Controller);
+			kernel.BindHttpFilter<RewriteResponseCodeFilterAttribute>(FilterScope.Controller);
 		}		
 	}
 }

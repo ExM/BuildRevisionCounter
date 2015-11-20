@@ -1,6 +1,7 @@
 ﻿using BuildRevisionCounter.DTO;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using BuildRevisionCounter.Exceptions;
 
 namespace BuildRevisionCounter
 {
